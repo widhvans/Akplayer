@@ -148,28 +148,32 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun showAudioFiles() {
-        // Filter to show only audio content
         isShowingFolders = false
         binding.recyclerView.adapter = videoAdapter
         binding.recyclerView.layoutManager = GridLayoutManager(this, 2)
         
-        val audioFiles = allVideos.filter { 
-            it.mimeType.startsWith("audio") || 
-            it.path.endsWith(".mp3", true) || 
-            it.path.endsWith(".m4a", true) ||
-            it.path.endsWith(".aac", true) ||
-            it.path.endsWith(".wav", true) ||
-            it.path.endsWith(".flac", true)
-        }
-        
-        if (audioFiles.isEmpty()) {
-            binding.recyclerView.visibility = View.GONE
-            binding.emptyView.visibility = View.VISIBLE
-            binding.emptyText.text = "No audio files found"
-        } else {
-            binding.emptyView.visibility = View.GONE
-            binding.recyclerView.visibility = View.VISIBLE
-            videoAdapter.submitList(audioFiles)
+        // Scan audio files from MediaStore
+        binding.progressBar.visibility = View.VISIBLE
+        lifecycleScope.launch {
+            try {
+                val audioFiles = VideoScanner.getAllAudio(this@MainActivity)
+                binding.progressBar.visibility = View.GONE
+                
+                if (audioFiles.isEmpty()) {
+                    binding.recyclerView.visibility = View.GONE
+                    binding.emptyView.visibility = View.VISIBLE
+                    binding.emptyText.text = "No audio files found"
+                } else {
+                    binding.emptyView.visibility = View.GONE
+                    binding.recyclerView.visibility = View.VISIBLE
+                    videoAdapter.submitList(audioFiles)
+                }
+            } catch (e: Exception) {
+                binding.progressBar.visibility = View.GONE
+                binding.recyclerView.visibility = View.GONE
+                binding.emptyView.visibility = View.VISIBLE
+                binding.emptyText.text = "Error loading audio files"
+            }
         }
     }
     
@@ -380,19 +384,45 @@ class MainActivity : AppCompatActivity() {
                 binding.swipeRefresh.isRefreshing = false
                 binding.progressBar.visibility = View.GONE
                 
-                if (allFolders.isEmpty()) {
-                    binding.emptyView.visibility = View.VISIBLE
-                    binding.recyclerView.visibility = View.GONE
-                } else {
-                    binding.emptyView.visibility = View.GONE
-                    binding.recyclerView.visibility = View.VISIBLE
-                    showFolders()
+                // Show content based on current tab
+                when (currentTab) {
+                    0 -> showAllVideos()  // Videos tab - show all videos
+                    1 -> showAudioFiles()
+                    2 -> showFolders()
+                    3 -> showPlaylists()
+                    else -> showAllVideos()
                 }
             } catch (e: Exception) {
                 binding.swipeRefresh.isRefreshing = false
                 binding.progressBar.visibility = View.GONE
                 Toast.makeText(this@MainActivity, "Error loading videos: ${e.message}", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+    
+    private fun showAllVideos() {
+        isShowingFolders = false
+        binding.recyclerView.adapter = videoAdapter
+        binding.recyclerView.layoutManager = GridLayoutManager(this, 2)
+        
+        // Filter only video files (not audio)
+        val videoFiles = allVideos.filter { 
+            !it.mimeType.startsWith("audio") &&
+            !it.path.endsWith(".mp3", true) &&
+            !it.path.endsWith(".m4a", true) &&
+            !it.path.endsWith(".aac", true) &&
+            !it.path.endsWith(".wav", true) &&
+            !it.path.endsWith(".flac", true)
+        }
+        
+        if (videoFiles.isEmpty()) {
+            binding.recyclerView.visibility = View.GONE
+            binding.emptyView.visibility = View.VISIBLE
+            binding.emptyText.text = "No videos found"
+        } else {
+            binding.emptyView.visibility = View.GONE
+            binding.recyclerView.visibility = View.VISIBLE
+            videoAdapter.submitList(videoFiles)
         }
     }
 

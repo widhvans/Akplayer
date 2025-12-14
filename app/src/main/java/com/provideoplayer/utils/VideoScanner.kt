@@ -170,4 +170,87 @@ object VideoScanner {
             it.folderName.contains(query, ignoreCase = true)
         }
     }
+    
+    /**
+     * Get all audio files from device storage
+     */
+    suspend fun getAllAudio(context: Context): List<VideoItem> = withContext(Dispatchers.IO) {
+        val audioFiles = mutableListOf<VideoItem>()
+        
+        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        }
+        
+        val projection = arrayOf(
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.DISPLAY_NAME,
+            MediaStore.Audio.Media.DATA,
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.SIZE,
+            MediaStore.Audio.Media.DATE_ADDED,
+            MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.MIME_TYPE
+        )
+        
+        val sortOrder = "${MediaStore.Audio.Media.DATE_ADDED} DESC"
+        
+        context.contentResolver.query(
+            collection,
+            projection,
+            null,
+            null,
+            sortOrder
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+            val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
+            val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
+            val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+            val albumColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+            val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+            val mimeColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+            
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val name = cursor.getString(nameColumn) ?: "Unknown"
+                val data = cursor.getString(dataColumn) ?: ""
+                val duration = cursor.getLong(durationColumn)
+                val size = cursor.getLong(sizeColumn)
+                val dateAdded = cursor.getLong(dateColumn)
+                val album = cursor.getString(albumColumn) ?: "Unknown Album"
+                val artist = cursor.getString(artistColumn) ?: "Unknown Artist"
+                val mimeType = cursor.getString(mimeColumn) ?: "audio/*"
+                
+                val contentUri = ContentUris.withAppendedId(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    id
+                )
+                
+                // Only add audio with valid duration
+                if (duration > 0) {
+                    audioFiles.add(
+                        VideoItem(
+                            id = id,
+                            title = name,
+                            path = data,
+                            uri = contentUri,
+                            duration = duration,
+                            size = size,
+                            resolution = "$artist - $album",
+                            dateAdded = dateAdded,
+                            folderName = album,
+                            folderId = 0,
+                            mimeType = mimeType
+                        )
+                    )
+                }
+            }
+        }
+        
+        audioFiles
+    }
 }
