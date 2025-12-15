@@ -692,6 +692,12 @@ class MainActivity : AppCompatActivity() {
             .putBoolean("is_grid_view", isGrid)
             .apply()
         
+        // Update adapter's view mode flag FIRST
+        videoAdapter.isListView = !isGrid
+        
+        // Clear RecyclerView's cached views to prevent glitch
+        binding.recyclerView.recycledViewPool.clear()
+        
         // Update layout manager
         binding.recyclerView.layoutManager = if (isGrid) {
             GridLayoutManager(this, 2)
@@ -699,13 +705,9 @@ class MainActivity : AppCompatActivity() {
             LinearLayoutManager(this)
         }
         
-        // Update adapter's view mode flag
-        videoAdapter.isListView = !isGrid
-        
-        // Force adapter to recreate views with correct layout
-        val currentList = videoAdapter.currentList.toList()
-        videoAdapter.submitList(null)
-        videoAdapter.submitList(currentList)
+        // Re-set adapter to force complete recreation of all ViewHolders
+        binding.recyclerView.adapter = null
+        binding.recyclerView.adapter = videoAdapter
     }
     
     private fun applyVideoLayoutPreference() {
