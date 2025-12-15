@@ -206,14 +206,36 @@ class NetworkStreamActivity : AppCompatActivity() {
             return
         }
         
+        // Load saved position for this stream URL
+        val savedPosition = getSavedStreamPosition(url)
+        
         val intent = Intent(this, PlayerActivity::class.java).apply {
             putExtra(PlayerActivity.EXTRA_VIDEO_URI, url)
             putExtra(PlayerActivity.EXTRA_VIDEO_TITLE, title)
             putExtra(PlayerActivity.EXTRA_IS_NETWORK_STREAM, true)
+            if (savedPosition > 0L) {
+                putExtra(PlayerActivity.EXTRA_PLAYBACK_POSITION, savedPosition)
+            }
             putStringArrayListExtra(PlayerActivity.EXTRA_PLAYLIST, arrayListOf(url))
             putStringArrayListExtra(PlayerActivity.EXTRA_PLAYLIST_TITLES, arrayListOf(title))
         }
         startActivity(intent)
+    }
+    
+    /**
+     * Get saved playback position for a stream URL
+     */
+    private fun getSavedStreamPosition(url: String): Long {
+        val prefs = getSharedPreferences("pro_video_player_prefs", MODE_PRIVATE)
+        val positionsJson = prefs.getString("video_positions", "{}") ?: "{}"
+        
+        return try {
+            val positionsObj = org.json.JSONObject(positionsJson)
+            val uriKey = url.hashCode().toString()
+            positionsObj.optLong(uriKey, 0L)
+        } catch (e: Exception) {
+            0L
+        }
     }
 
     private fun isValidUrl(url: String): Boolean {

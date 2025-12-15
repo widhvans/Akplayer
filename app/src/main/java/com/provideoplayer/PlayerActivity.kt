@@ -66,7 +66,8 @@ class PlayerActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_VIDEO_URI = "video_uri"
         const val EXTRA_VIDEO_TITLE = "video_title"
-        const val EXTRA_VIDEO_POSITION = "video_position"
+        const val EXTRA_VIDEO_POSITION = "video_position"  // Playlist index (Int)
+        const val EXTRA_PLAYBACK_POSITION = "playback_position"  // Resume position in ms (Long)
         const val EXTRA_PLAYLIST = "playlist"
         const val EXTRA_PLAYLIST_TITLES = "playlist_titles"
         const val EXTRA_IS_NETWORK_STREAM = "is_network_stream"
@@ -420,7 +421,7 @@ class PlayerActivity : AppCompatActivity() {
             }
             
             // Get start position from intent (for resume playback)
-            val startPosition = intent.getLongExtra(EXTRA_VIDEO_POSITION, 0L)
+            val startPosition = intent.getLongExtra(EXTRA_PLAYBACK_POSITION, 0L)
             
             // For network streams, use ProgressiveMediaSource directly
             if (isNetworkStream) {
@@ -1869,12 +1870,34 @@ class PlayerActivity : AppCompatActivity() {
             finalArray.put(newArray.getString(i))
         }
         
+        // Load existing per-URI positions
+        val positionsJson = prefs.getString("video_positions", "{}")
+        val positionsObj = try {
+            org.json.JSONObject(positionsJson)
+        } catch (e: Exception) {
+            org.json.JSONObject()
+        }
+        
+        // Save position for this URI (use hashCode as key to avoid special chars issues)
+        val uriKey = currentUri.hashCode().toString()
+        positionsObj.put(uriKey, position)
+        
+        // Clean up old position entries (keep only for URIs in history)
+        val validKeys = (0 until finalArray.length()).map { 
+            finalArray.getString(it).hashCode().toString() 
+        }.toSet()
+        val keysToRemove = positionsObj.keys().asSequence().filter { it !in validKeys }.toList()
+        keysToRemove.forEach { positionsObj.remove(it) }
+        
         prefs.edit()
             .putString("video_history", finalArray.toString())
+            .putString("video_positions", positionsObj.toString())
             .putString("last_video_uri", currentUri)
             .putString("last_video_title", currentTitle)
             .putLong("last_video_position", position)
             .apply()
+        
+        android.util.Log.d("PlayerActivity", "Saved position $position for URI: ${currentUri.take(50)}...")
     }
 
     override fun onStop() {

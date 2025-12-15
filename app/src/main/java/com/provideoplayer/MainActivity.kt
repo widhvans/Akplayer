@@ -756,10 +756,16 @@ class MainActivity : AppCompatActivity() {
         // Find the correct index of clicked video in the playlist
         val videoIndex = playlist.indexOfFirst { it.id == video.id }.takeIf { it >= 0 } ?: position
         
+        // Load saved playback position for this URI (for resume from history/playlist)
+        val savedPosition = getSavedPlaybackPosition(video.uri.toString())
+        
         val intent = Intent(this, PlayerActivity::class.java).apply {
             putExtra(PlayerActivity.EXTRA_VIDEO_URI, video.uri.toString())
             putExtra(PlayerActivity.EXTRA_VIDEO_TITLE, video.title)
             putExtra(PlayerActivity.EXTRA_VIDEO_POSITION, videoIndex)
+            if (savedPosition > 0L) {
+                putExtra(PlayerActivity.EXTRA_PLAYBACK_POSITION, savedPosition)
+            }
             putStringArrayListExtra(
                 PlayerActivity.EXTRA_PLAYLIST,
                 ArrayList(playlist.map { it.uri.toString() })
@@ -770,6 +776,22 @@ class MainActivity : AppCompatActivity() {
             )
         }
         startActivity(intent)
+    }
+    
+    /**
+     * Get saved playback position for a URI from stored positions
+     */
+    private fun getSavedPlaybackPosition(uri: String): Long {
+        val prefs = getSharedPreferences("pro_video_player_prefs", MODE_PRIVATE)
+        val positionsJson = prefs.getString("video_positions", "{}") ?: "{}"
+        
+        return try {
+            val positionsObj = org.json.JSONObject(positionsJson)
+            val uriKey = uri.hashCode().toString()
+            positionsObj.optLong(uriKey, 0L)
+        } catch (e: Exception) {
+            0L
+        }
     }
     
     private fun saveVideoToHistory(uri: String, title: String) {
@@ -956,7 +978,7 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, PlayerActivity::class.java).apply {
             putExtra(PlayerActivity.EXTRA_VIDEO_URI, lastUri)
             putExtra(PlayerActivity.EXTRA_VIDEO_TITLE, lastTitle)
-            putExtra(PlayerActivity.EXTRA_VIDEO_POSITION, lastPosition)  // Resume from saved position
+            putExtra(PlayerActivity.EXTRA_PLAYBACK_POSITION, lastPosition)  // Resume from saved position
             putExtra(PlayerActivity.EXTRA_IS_NETWORK_STREAM, isNetworkStream)
             putStringArrayListExtra(PlayerActivity.EXTRA_PLAYLIST, arrayListOf(lastUri))
             putStringArrayListExtra(PlayerActivity.EXTRA_PLAYLIST_TITLES, arrayListOf(lastTitle ?: "Video"))
