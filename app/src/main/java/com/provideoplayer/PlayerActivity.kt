@@ -106,6 +106,11 @@ class PlayerActivity : AppCompatActivity() {
     private var lastTouchX = 0f
     private var lastTouchY = 0f
     private var isPanning = false
+    private var lastFocusX = 0f
+    private var lastFocusY = 0f
+    
+    // Seek state
+    private var isSeeking = false
     
     // Control visibility
     private val hideHandler = Handler(Looper.getMainLooper())
@@ -702,8 +707,15 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
         
-        // Setup scale gesture detector for pinch zoom
+        // Setup scale gesture detector for pinch zoom with integrated pan
         scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                // Save initial focus point for pan tracking
+                lastFocusX = detector.focusX
+                lastFocusY = detector.focusY
+                return true
+            }
+            
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 if (isLocked) return false
                 
@@ -718,11 +730,19 @@ class PlayerActivity : AppCompatActivity() {
                 val viewCenterX = playerView.width / 2f
                 val viewCenterY = playerView.height / 2f
                 
-                // Adjust translation to zoom at focal point
+                // Handle pan while zooming (focus point movement)
+                if (currentScale > 1.0f || newScale > 1.0f) {
+                    val panDx = focusX - lastFocusX
+                    val panDy = focusY - lastFocusY
+                    currentTranslateX += panDx
+                    currentTranslateY += panDy
+                }
+                
+                // Adjust translation for zoom focal point
                 if (newScale > currentScale) {
                     // Zooming in - move towards focal point
-                    val dx = (focusX - viewCenterX) * (1 - scaleFactor) * 0.5f
-                    val dy = (focusY - viewCenterY) * (1 - scaleFactor) * 0.5f
+                    val dx = (focusX - viewCenterX - currentTranslateX) * (1 - 1/scaleFactor) * 0.3f
+                    val dy = (focusY - viewCenterY - currentTranslateY) * (1 - 1/scaleFactor) * 0.3f
                     currentTranslateX += dx
                     currentTranslateY += dy
                 } else if (newScale < currentScale && newScale > minScale) {
@@ -731,6 +751,12 @@ class PlayerActivity : AppCompatActivity() {
                     currentTranslateY *= scaleFactor
                 }
                 
+                // Limit translation to zoomed content bounds
+                val maxTranslateX = (newScale - 1f) * screenWidth / 2f
+                val maxTranslateY = (newScale - 1f) * screenHeight / 2f
+                currentTranslateX = currentTranslateX.coerceIn(-maxTranslateX, maxTranslateX)
+                currentTranslateY = currentTranslateY.coerceIn(-maxTranslateY, maxTranslateY)
+                
                 currentScale = newScale
                 
                 // Apply zoom and translation
@@ -738,6 +764,10 @@ class PlayerActivity : AppCompatActivity() {
                 playerView.scaleY = currentScale
                 playerView.translationX = currentTranslateX
                 playerView.translationY = currentTranslateY
+                
+                // Update last focus for next pan calculation
+                lastFocusX = focusX
+                lastFocusY = focusY
                 
                 return true
             }
@@ -912,6 +942,7 @@ class PlayerActivity : AppCompatActivity() {
             }
             
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                isSeeking = true
                 stopProgressUpdates()
             }
             
@@ -922,10 +953,22 @@ class PlayerActivity : AppCompatActivity() {
                 if (duration > 0) {
                     // Calculate target position and seek
                     val position = (duration * progress / 100).toLong()
+                    
+                    // Use seekTo with SEEK_MODE for smoother seeking
                     player?.seekTo(position)
+                    
+                    // Update UI immediately to show target position
+                    binding.currentTime.text = formatTime(position)
+                    
+                    // Delay restarting progress updates to let seek complete
+                    progressHandler.postDelayed({
+                        isSeeking = false
+                        startProgressUpdates()
+                    }, 500)
+                } else {
+                    isSeeking = false
+                    startProgressUpdates()
                 }
-                // If duration is 0 or negative, just ignore - ExoPlayer error handler will catch issues
-                startProgressUpdates()
             }
         })
         
@@ -1406,6 +1449,9 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun updateProgress() {
+        // Don't update progress while user is seeking
+        if (isSeeking) return
+        
         player?.let {
             val position = it.currentPosition
             val duration = it.duration.takeIf { d -> d > 0 } ?: 0
