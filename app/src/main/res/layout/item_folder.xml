@@ -6,23 +6,25 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="8dp"
-    android:layout_marginVertical="4dp"
+    android:layout_marginVertical="2dp"
     app:cardBackgroundColor="@color/surface_dark"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="1dp">
+    app:cardCornerRadius="8dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp">
 
         <!-- Folder Icon -->
         <ImageView
             android:id="@+id/folderIcon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:src="@drawable/ic_folder"
             app:tint="@color/purple_500" />
 
@@ -30,7 +32,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -41,7 +43,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:textColor="@color/text_primary"
-                android:textSize="16sp"
+                android:textSize="14sp"
                 android:textStyle="bold"
                 tools:text="Downloads" />
 
@@ -49,17 +51,16 @@
                 android:id="@+id/videoCount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
                 android:textColor="@color/text_secondary"
-                android:textSize="13sp"
+                android:textSize="12sp"
                 tools:text="12 videos" />
 
         </LinearLayout>
 
         <!-- Arrow -->
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:src="@drawable/ic_arrow_right"
             app:tint="@color/text_secondary" />
 

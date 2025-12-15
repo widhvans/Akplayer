@@ -201,6 +201,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_browse -> {
                     currentTab = 2
                     supportActionBar?.title = "Browse"
+                    supportActionBar?.subtitle = null  // Clear subtitle
                     supportActionBar?.setDisplayHomeAsUpEnabled(false)
                     currentFolderId = null
                     currentFolderPath = null
@@ -210,6 +211,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.nav_playlist -> {
                     currentTab = 3
                     supportActionBar?.title = "Playlist"
+                    supportActionBar?.subtitle = null  // Clear subtitle
                     binding.filterBar.visibility = View.GONE
                     binding.swipeRefresh.setPadding(0, 0, 0, 0)  // Reset padding
                     currentFolderId = null
@@ -219,6 +221,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.nav_network -> {
                     currentTab = 4
+                    supportActionBar?.subtitle = null  // Clear subtitle
                     openNetworkStreamDialog()
                     true
                 }
@@ -239,6 +242,9 @@ class MainActivity : AppCompatActivity() {
             try {
                 val audioFiles = VideoScanner.getAllAudio(this@MainActivity)
                 binding.progressBar.visibility = View.GONE
+                
+                // Show total count in toolbar
+                supportActionBar?.subtitle = "${audioFiles.size} audio files"
                 
                 if (audioFiles.isEmpty()) {
                     binding.recyclerView.visibility = View.GONE
@@ -516,6 +522,9 @@ class MainActivity : AppCompatActivity() {
             !it.path.endsWith(".wav", true) &&
             !it.path.endsWith(".flac", true)
         }
+        
+        // Show total count in toolbar
+        supportActionBar?.subtitle = "${videoFiles.size} videos"
         
         if (videoFiles.isEmpty()) {
             binding.recyclerView.visibility = View.GONE
