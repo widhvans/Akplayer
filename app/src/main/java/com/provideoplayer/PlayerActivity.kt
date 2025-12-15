@@ -111,6 +111,7 @@ class PlayerActivity : AppCompatActivity() {
     
     // Seek state
     private var isSeeking = false
+    private var pendingSeekPosition: Long = -1L  // Track target seek position
     
     // Control visibility
     private val hideHandler = Handler(Looper.getMainLooper())
@@ -345,10 +346,9 @@ class PlayerActivity : AppCompatActivity() {
         // Create data source factory that uses OkHttp for network and default for local
         val dataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
         
-        // Create custom extractors factory with experimental MKV support
-        // This fixes "Multiple Segment elements not supported" error for non-standard MKV streams
+        // Create custom extractors factory
+        // Note: Removed FLAG_DISABLE_SEEK_FOR_CUES as it was preventing seeking in large videos
         val extractorsFactory = DefaultExtractorsFactory()
-            .setMatroskaExtractorFlags(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES)
         
         // Create media source factory with HLS/DASH support and custom extractors
         val mediaSourceFactory = DefaultMediaSourceFactory(this, extractorsFactory)
@@ -637,6 +637,39 @@ class PlayerActivity : AppCompatActivity() {
             // Update visualization if audio state changed
             if (wasAudio != isAudioFile) {
                 setupAudioVisualization()
+            }
+        }
+        
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int
+        ) {
+            when (reason) {
+                Player.DISCONTINUITY_REASON_SEEK -> {
+                    android.util.Log.d("PlayerActivity", "Seek completed: ${oldPosition.positionMs} -> ${newPosition.positionMs}")
+                    // Seek completed successfully
+                    if (isSeeking) {
+                        isSeeking = false
+                        pendingSeekPosition = -1L
+                        startProgressUpdates()
+                    }
+                }
+                Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT -> {
+                    android.util.Log.d("PlayerActivity", "Seek adjusted: ${oldPosition.positionMs} -> ${newPosition.positionMs}")
+                    // Seek was adjusted (e.g., to nearest keyframe)
+                    if (isSeeking) {
+                        isSeeking = false
+                        pendingSeekPosition = -1L
+                        startProgressUpdates()
+                    }
+                }
+                Player.DISCONTINUITY_REASON_AUTO_TRANSITION -> {
+                    android.util.Log.d("PlayerActivity", "Auto transition")
+                }
+                else -> {
+                    android.util.Log.d("PlayerActivity", "Position discontinuity: reason=$reason")
+                }
             }
         }
     }
@@ -946,53 +979,79 @@ class PlayerActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {
                 isSeeking = true
                 stopProgressUpdates()
-                // Cancel any pending hide operations while seeking
+                // Cancel any pending hide operations and timeout handlers while seeking
                 hideHandler.removeCallbacksAndMessages(null)
+                progressHandler.removeCallbacksAndMessages(null)
             }
             
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 val currentPlayer = player
                 if (currentPlayer == null) {
                     isSeeking = false
+                    pendingSeekPosition = -1L
                     startProgressUpdates()
                     return
                 }
                 
                 val duration = currentPlayer.duration
                 val progress = seekBar?.progress ?: 0
+                val currentMediaItemIndex = currentPlayer.currentMediaItemIndex
                 
-                android.util.Log.d("PlayerActivity", "SeekBar: onStopTrackingTouch - progress: $progress, duration: $duration")
+                android.util.Log.d("PlayerActivity", "SeekBar: onStopTrackingTouch - progress: $progress%, duration: $duration ms, mediaIndex: $currentMediaItemIndex")
                 
                 // Check for valid duration (not TIME_UNSET and > 0)
                 if (duration != C.TIME_UNSET && duration > 0) {
                     // Use Long arithmetic to avoid overflow for large durations
-                    val position = (duration.toLong() * progress.toLong() / 100L)
+                    val targetPosition = (duration.toLong() * progress.toLong() / 100L)
                     
-                    android.util.Log.d("PlayerActivity", "SeekBar: Seeking to position: $position ms")
+                    android.util.Log.d("PlayerActivity", "SeekBar: Seeking to position: $targetPosition ms (${formatTime(targetPosition)})")
                     
-                    // Perform the seek
-                    currentPlayer.seekTo(position)
+                    // Store pending seek position for tracking
+                    pendingSeekPosition = targetPosition
+                    
+                    // Perform the seek with media item index to ensure correct seeking
+                    currentPlayer.seekTo(currentMediaItemIndex, targetPosition)
                     
                     // Update UI immediately to show target position
-                    binding.currentTime.text = formatTime(position)
+                    binding.currentTime.text = formatTime(targetPosition)
                     
-                    // Delay restarting progress updates to let seek complete
+                    // Safety timeout - if onPositionDiscontinuity doesn't fire within 2 seconds, reset seeking state
+                    progressHandler.postDelayed({
+                        if (isSeeking) {
+                            android.util.Log.w("PlayerActivity", "SeekBar: Seek timeout - forcing state reset")
+                            isSeeking = false
+                            pendingSeekPosition = -1L
+                            startProgressUpdates()
+                        }
+                    }, 2000)
+                } else {
+                    android.util.Log.w("PlayerActivity", "SeekBar: Invalid duration ($duration), trying alternative seek method")
+                    
+                    // For streams without known duration, try to seek using contentDuration or buffered position
+                    val contentDuration = currentPlayer.contentDuration
+                    val bufferedPosition = currentPlayer.bufferedPosition
+                    
+                    android.util.Log.d("PlayerActivity", "SeekBar: contentDuration: $contentDuration, bufferedPosition: $bufferedPosition")
+                    
+                    if (contentDuration != C.TIME_UNSET && contentDuration > 0) {
+                        val targetPosition = (contentDuration.toLong() * progress.toLong() / 100L)
+                        pendingSeekPosition = targetPosition
+                        currentPlayer.seekTo(currentMediaItemIndex, targetPosition)
+                        binding.currentTime.text = formatTime(targetPosition)
+                    } else if (bufferedPosition > 0 && progress > 0) {
+                        // Last resort: estimate based on buffered content
+                        val estimatedPosition = (bufferedPosition.toLong() * progress.toLong() / 100L)
+                        pendingSeekPosition = estimatedPosition
+                        android.util.Log.d("PlayerActivity", "SeekBar: Attempting seek with estimated position: $estimatedPosition")
+                        currentPlayer.seekTo(currentMediaItemIndex, estimatedPosition)
+                    }
+                    
+                    // Reset state after delay
                     progressHandler.postDelayed({
                         isSeeking = false
+                        pendingSeekPosition = -1L
                         startProgressUpdates()
-                    }, 300)
-                } else {
-                    android.util.Log.w("PlayerActivity", "SeekBar: Invalid duration, cannot seek. Duration: $duration")
-                    // For streams without known duration, try to seek anyway using buffered position
-                    val bufferedPosition = currentPlayer.bufferedPosition
-                    if (bufferedPosition > 0 && progress > 0) {
-                        // Estimate position based on buffered content
-                        val estimatedPosition = (bufferedPosition.toLong() * progress.toLong() / 100L)
-                        android.util.Log.d("PlayerActivity", "SeekBar: Attempting seek with buffered position: $estimatedPosition")
-                        currentPlayer.seekTo(estimatedPosition)
-                    }
-                    isSeeking = false
-                    startProgressUpdates()
+                    }, 500)
                 }
             }
         })
