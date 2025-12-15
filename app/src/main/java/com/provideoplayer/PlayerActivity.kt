@@ -1811,7 +1811,17 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Update screen dimensions when orientation changes (important for double tap gesture)
+        val displayMetrics = resources.displayMetrics
+        screenWidth = displayMetrics.widthPixels
+        screenHeight = displayMetrics.heightPixels
+        android.util.Log.d("PlayerActivity", "Configuration changed: screenWidth=$screenWidth, screenHeight=$screenHeight")
+    }
+
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         
         if (isInPictureInPictureMode) {
