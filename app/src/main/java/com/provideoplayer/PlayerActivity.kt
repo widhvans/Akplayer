@@ -132,13 +132,15 @@ class PlayerActivity : AppCompatActivity() {
     private var cdAnimator: android.animation.ObjectAnimator? = null
     
     // Error recovery for stream parsing - try different MIME types
+    // Order: auto-detect first, then common formats, finally streaming formats
     private var currentMimeTypeIndex = 0
     private val fallbackMimeTypes = listOf(
-        MimeTypes.VIDEO_MP4,           // Try MP4 first (most common)
-        MimeTypes.APPLICATION_M3U8,    // Then HLS
-        MimeTypes.VIDEO_MATROSKA,      // Then MKV
-        MimeTypes.VIDEO_WEBM,          // Then WebM
-        null                           // Finally let ExoPlayer auto-detect
+        null,                            // First: let ExoPlayer auto-detect
+        MimeTypes.VIDEO_MP4,             // Then: MP4 (most common for downloads)
+        MimeTypes.VIDEO_MATROSKA,        // Then: MKV
+        MimeTypes.VIDEO_WEBM,            // Then: WebM
+        MimeTypes.VIDEO_MP2T,            // Then: MPEG-TS
+        MimeTypes.APPLICATION_M3U8       // Last: HLS (less common for direct links)
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -627,10 +629,17 @@ class PlayerActivity : AppCompatActivity() {
             
             val currentUri = playlist.getOrNull(currentIndex) ?: ""
             val isNetworkStream = currentUri.startsWith("http://") || currentUri.startsWith("https://")
+            
+            // Check for all parsing-related errors that should trigger retry
             val isParsingError = error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED ||
                                  error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED ||
+                                 error.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED ||
+                                 error.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED ||
+                                 error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED ||
                                  error.message?.contains("Multiple Segment elements", true) == true ||
-                                 error.cause?.message?.contains("Multiple Segment elements", true) == true
+                                 error.cause?.message?.contains("Multiple Segment elements", true) == true ||
+                                 error.cause?.message?.contains("EXTM3U", true) == true ||
+                                 error.cause?.message?.contains("ParserException", true) == true
             
             // For network streams with parsing errors, try different MIME types
             if (isNetworkStream && isParsingError && currentMimeTypeIndex < fallbackMimeTypes.size - 1) {
