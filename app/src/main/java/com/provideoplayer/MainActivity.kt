@@ -3,6 +3,7 @@ package com.provideoplayer
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Menu
@@ -852,7 +853,102 @@ class MainActivity : AppCompatActivity() {
                 openPlayer(video, 0)
             }
             .setNegativeButton("Close", null)
+            .setNeutralButton("Delete") { _, _ ->
+                confirmAndDeleteVideo(video)
+            }
             .show()
+    }
+    
+    private fun confirmAndDeleteVideo(video: VideoItem) {
+        val prefs = getSharedPreferences("pro_video_player_prefs", MODE_PRIVATE)
+        val dontAskAgain = prefs.getBoolean("delete_dont_ask_again", false)
+        
+        if (dontAskAgain) {
+            // Delete directly without asking
+            deleteVideo(video)
+        } else {
+            // Show confirmation dialog with checkbox
+            val checkboxView = android.widget.CheckBox(this).apply {
+                text = "Don't ask again"
+                setPadding(48, 24, 48, 0)
+            }
+            
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Delete File")
+                .setMessage("Are you sure you want to delete:\n\n${video.title}?")
+                .setView(checkboxView)
+                .setPositiveButton("Yes") { _, _ ->
+                    // Save preference if checkbox checked
+                    if (checkboxView.isChecked) {
+                        prefs.edit().putBoolean("delete_dont_ask_again", true).apply()
+                    }
+                    deleteVideo(video)
+                }
+                .setNegativeButton("No", null)
+                .show()
+        }
+    }
+    
+    private fun deleteVideo(video: VideoItem) {
+        try {
+            // Try to delete using ContentResolver
+            val deletedRows = contentResolver.delete(video.uri, null, null)
+            
+            if (deletedRows > 0) {
+                Toast.makeText(this, "Deleted: ${video.title}", Toast.LENGTH_SHORT).show()
+                // Refresh the list
+                loadVideos()
+            } else {
+                // If ContentResolver fails, try file deletion
+                val file = java.io.File(video.path)
+                if (file.exists() && file.delete()) {
+                    // Also delete from MediaStore
+                    contentResolver.delete(
+                        android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                        "${android.provider.MediaStore.Video.Media.DATA}=?",
+                        arrayOf(video.path)
+                    )
+                    Toast.makeText(this, "Deleted: ${video.title}", Toast.LENGTH_SHORT).show()
+                    loadVideos()
+                } else {
+                    Toast.makeText(this, "Failed to delete file", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: SecurityException) {
+            // On Android 10+ (Scoped Storage), we need special handling
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // Request delete permission via SAF
+                try {
+                    val pendingIntent = android.provider.MediaStore.createDeleteRequest(
+                        contentResolver,
+                        listOf(video.uri)
+                    )
+                    startIntentSenderForResult(
+                        pendingIntent.intentSender,
+                        DELETE_REQUEST_CODE,
+                        null, 0, 0, 0
+                    )
+                } catch (e2: Exception) {
+                    Toast.makeText(this, "Cannot delete: Permission denied", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Cannot delete: Permission denied", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error deleting file: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    companion object {
+        private const val DELETE_REQUEST_CODE = 1001
+    }
+    
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == DELETE_REQUEST_CODE && resultCode == RESULT_OK) {
+            Toast.makeText(this, "File deleted successfully", Toast.LENGTH_SHORT).show()
+            loadVideos()
+        }
     }
 
     private fun openNetworkStreamDialog() {

@@ -42,6 +42,8 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import okhttp3.OkHttpClient
 import okhttp3.Cookie
@@ -324,8 +326,13 @@ class PlayerActivity : AppCompatActivity() {
         // Create data source factory that uses OkHttp for network and default for local
         val dataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
         
-        // Create media source factory with HLS/DASH support
-        val mediaSourceFactory = DefaultMediaSourceFactory(this)
+        // Create custom extractors factory with experimental MKV support
+        // This fixes "Multiple Segment elements not supported" error for non-standard MKV streams
+        val extractorsFactory = DefaultExtractorsFactory()
+            .setMatroskaExtractorFlags(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES)
+        
+        // Create media source factory with HLS/DASH support and custom extractors
+        val mediaSourceFactory = DefaultMediaSourceFactory(this, extractorsFactory)
             .setDataSourceFactory(dataSourceFactory)
         
         // Create RenderersFactory with software decoder support
