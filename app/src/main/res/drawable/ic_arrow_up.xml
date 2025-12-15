@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Up arrow pointing to audio track button -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,4L4,14h5v6h6v-6h5z"/>
+</vector>

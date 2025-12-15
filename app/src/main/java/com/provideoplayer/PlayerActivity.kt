@@ -1813,8 +1813,17 @@ class PlayerActivity : AppCompatActivity() {
             binding.bottomBar.visibility = View.GONE
             binding.gestureOverlay.visibility = View.GONE
         } else {
-            binding.gestureOverlay.visibility = View.VISIBLE
-            showControls()
+            // Exiting PiP mode
+            if (isFinishing) {
+                // User closed PiP window - stop and release player
+                player?.stop()
+                player?.release()
+                player = null
+                android.util.Log.d("PlayerActivity", "PiP closed - player stopped")
+            } else {
+                binding.gestureOverlay.visibility = View.VISIBLE
+                showControls()
+            }
         }
     }
 
@@ -2011,18 +2020,37 @@ class PlayerActivity : AppCompatActivity() {
         // Show tooltip pointing to audio track button
         showControls()  // Make sure controls are visible
         
-        // Create tooltip using a PopupWindow
-        val tooltipView = android.widget.TextView(this).apply {
-            text = "⬆️ Multiple audio tracks!\nTap the button above to change language"
-            setTextColor(android.graphics.Color.WHITE)
-            textSize = 14f
+        // Create professional tooltip with arrow pointing up
+        val tooltipLayout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
             setPadding(32, 24, 32, 24)
             setBackgroundResource(android.R.drawable.toast_frame)
-            background.setTint(android.graphics.Color.parseColor("#CC000000"))
+            background.setTint(android.graphics.Color.parseColor("#DD000000"))
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
         }
         
+        // Arrow pointing up to the button
+        val arrowView = android.widget.ImageView(this).apply {
+            setImageResource(R.drawable.ic_arrow_up)
+            setColorFilter(android.graphics.Color.WHITE)
+            layoutParams = android.widget.LinearLayout.LayoutParams(48, 48).apply {
+                bottomMargin = 8
+            }
+        }
+        
+        // Text message
+        val textView = android.widget.TextView(this).apply {
+            text = "Multiple audio tracks available!\nTap to change language"
+            setTextColor(android.graphics.Color.WHITE)
+            textSize = 13f
+            gravity = android.view.Gravity.CENTER
+        }
+        
+        tooltipLayout.addView(arrowView)
+        tooltipLayout.addView(textView)
+        
         val popup = android.widget.PopupWindow(
-            tooltipView,
+            tooltipLayout,
             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
             true
@@ -2032,10 +2060,10 @@ class PlayerActivity : AppCompatActivity() {
         // Show popup below audio track button with slight delay to ensure button is visible
         binding.btnAudioTrack.postDelayed({
             try {
-                popup.showAsDropDown(binding.btnAudioTrack, -100, 10)
+                popup.showAsDropDown(binding.btnAudioTrack, -80, 10)
                 
                 // Dismiss on tap anywhere
-                tooltipView.setOnClickListener {
+                tooltipLayout.setOnClickListener {
                     popup.dismiss()
                 }
                 
