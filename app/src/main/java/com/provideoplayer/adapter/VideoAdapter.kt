@@ -52,10 +52,12 @@ class VideoAdapter(
             
             val prefs = itemView.context.getSharedPreferences("pro_video_player_prefs", android.content.Context.MODE_PRIVATE)
             
-            // Check if media is in history (separate history for audio and video)
+            // Check if media is in history using proper JSON parsing
+            val videoUri = video.uri.toString()
+            
             if (isAudio) {
                 val audioHistoryJson = prefs.getString("audio_history", "[]") ?: "[]"
-                val isListened = audioHistoryJson.contains(video.uri.toString())
+                val isListened = isUriInHistory(audioHistoryJson, videoUri)
                 
                 if (isListened) {
                     size.text = video.getFormattedSize()
@@ -68,7 +70,7 @@ class VideoAdapter(
                 }
             } else {
                 val historyJson = prefs.getString("video_history", "[]") ?: "[]"
-                val isWatched = historyJson.contains(video.uri.toString())
+                val isWatched = isUriInHistory(historyJson, videoUri)
                 
                 if (isWatched) {
                     size.text = video.getFormattedSize()
@@ -123,6 +125,25 @@ class VideoAdapter(
         override fun areContentsTheSame(oldItem: VideoItem, newItem: VideoItem): Boolean {
             // Always return false to force rebind - this ensures NEW tag updates after history changes
             return false
+        }
+    }
+    
+    companion object {
+        /**
+         * Check if a URI exists in the history JSON array
+         */
+        fun isUriInHistory(historyJson: String, uri: String): Boolean {
+            return try {
+                val jsonArray = org.json.JSONArray(historyJson)
+                for (i in 0 until jsonArray.length()) {
+                    if (jsonArray.getString(i) == uri) {
+                        return true
+                    }
+                }
+                false
+            } catch (e: Exception) {
+                false
+            }
         }
     }
 }
