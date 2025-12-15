@@ -192,17 +192,16 @@ class PlayerActivity : AppCompatActivity() {
     override fun onNewIntent(newIntent: Intent?) {
         super.onNewIntent(newIntent)
         newIntent?.let { intentData ->
-            // If we're in PiP mode, exit PiP first
-            if (isPipMode && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                // Exit PiP mode by moving task to front
-                moveTaskToBack(false)
-            }
+            android.util.Log.d("PlayerActivity", "onNewIntent: New video intent received, isPipMode=$isPipMode")
             
-            // Update intent and reload video
+            // Update intent first
             intent = intentData
             
-            // Stop current playback
-            player?.stop()
+            // Clear current player state completely
+            player?.let { exoPlayer ->
+                exoPlayer.stop()
+                exoPlayer.clearMediaItems()
+            }
             
             // Re-parse intent with new data
             parseIntent()
@@ -210,11 +209,19 @@ class PlayerActivity : AppCompatActivity() {
             // Reload playlist with new video
             loadPlaylist()
             
-            // Ensure UI is visible
+            // Reset PiP mode flag if we were in PiP
+            if (isPipMode) {
+                isPipMode = false
+            }
+            
+            // Ensure UI is visible and controls are shown
+            binding.controlsContainer.visibility = View.VISIBLE
+            binding.topBar.visibility = View.VISIBLE
+            binding.bottomBar.visibility = View.VISIBLE
             binding.gestureOverlay.visibility = View.VISIBLE
             showControls()
             
-            android.util.Log.d("PlayerActivity", "onNewIntent: Loading new video while reusing activity")
+            android.util.Log.d("PlayerActivity", "onNewIntent: New video loaded successfully")
         }
     }
 
@@ -1985,16 +1992,8 @@ class PlayerActivity : AppCompatActivity() {
         android.util.Log.d("PlayerActivity", "Saved position $position for URI: ${currentUri.take(50)}...")
     }
     
-    // Audio track onboarding - shows tooltip once when multiple audio tracks detected
+    // Audio track onboarding - shows tooltip when multiple audio tracks detected
     private fun showAudioTrackOnboardingIfNeeded() {
-        val prefs = getSharedPreferences("pro_video_player_prefs", MODE_PRIVATE)
-        val hasSeenOnboarding = prefs.getBoolean("audio_track_onboarding_shown", false)
-        
-        if (hasSeenOnboarding) return
-        
-        // Mark as shown so it only appears once
-        prefs.edit().putBoolean("audio_track_onboarding_shown", true).apply()
-        
         // Show tooltip pointing to audio track button
         showControls()  // Make sure controls are visible
         
