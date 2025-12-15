@@ -2032,53 +2032,47 @@ class PlayerActivity : AppCompatActivity() {
         // Show tooltip pointing to audio track button
         showControls()  // Make sure controls are visible
         
-        // Create professional tooltip container
-        val tooltipContainer = android.widget.FrameLayout(this).apply {
-            layoutParams = android.widget.FrameLayout.LayoutParams(
-                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
-                android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        
-        // Main tooltip layout with message
+        // Create simple, clean tooltip layout
         val tooltipLayout = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
-            setPadding(24, 16, 24, 16)
-            setBackgroundResource(android.R.drawable.toast_frame)
-            background.setTint(android.graphics.Color.parseColor("#E0000000"))
+            setPadding(32, 20, 32, 20)
             gravity = android.view.Gravity.CENTER_VERTICAL
             
-            // Set a custom rounded background
+            // Set rounded background
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(android.graphics.Color.parseColor("#E0000000"))
-                cornerRadius = 16f
+                setColor(android.graphics.Color.parseColor("#DD1A1A1A"))
+                cornerRadius = 24f
+                setStroke(2, android.graphics.Color.parseColor("#4CAF50"))
             }
         }
         
-        // Audio track icon copy (smaller version)
+        // Audio track icon (green)
         val iconView = android.widget.ImageView(this).apply {
             setImageResource(R.drawable.ic_audio_track)
-            setColorFilter(android.graphics.Color.parseColor("#4CAF50"))  // Green accent
-            layoutParams = android.widget.LinearLayout.LayoutParams(44, 44).apply {
-                marginEnd = 12
+            setColorFilter(android.graphics.Color.parseColor("#4CAF50"))
+            layoutParams = android.widget.LinearLayout.LayoutParams(48, 48).apply {
+                marginEnd = 16
             }
         }
         
-        // Arrow from icon pointing right to text
-        val arrowView = android.widget.ImageView(this).apply {
-            setImageResource(R.drawable.ic_arrow_right)
-            setColorFilter(android.graphics.Color.parseColor("#AAAAAA"))  // Light gray
-            layoutParams = android.widget.LinearLayout.LayoutParams(24, 24).apply {
-                marginEnd = 12
-                gravity = android.view.Gravity.CENTER_VERTICAL
+        // Arrow pointing right
+        val arrowView = android.widget.TextView(this).apply {
+            text = "→"
+            setTextColor(android.graphics.Color.parseColor("#888888"))
+            textSize = 18f
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginEnd = 16
             }
         }
         
         // Text message
         val textView = android.widget.TextView(this).apply {
-            text = "Multiple audio tracks!\nTap icon to change"
+            text = "Multiple audio tracks\nTap to change"
             setTextColor(android.graphics.Color.WHITE)
-            textSize = 12f
+            textSize = 13f
             setLineSpacing(4f, 1f)
         }
         
@@ -2086,73 +2080,35 @@ class PlayerActivity : AppCompatActivity() {
         tooltipLayout.addView(arrowView)
         tooltipLayout.addView(textView)
         
-        // Add an up-pointing triangle at top center to point to the button
-        val triangleView = android.view.View(this).apply {
-            layoutParams = android.widget.FrameLayout.LayoutParams(24, 16).apply {
-                gravity = android.view.Gravity.TOP or android.view.Gravity.CENTER_HORIZONTAL
-                topMargin = 0
-            }
-            background = object : android.graphics.drawable.Drawable() {
-                private val paint = android.graphics.Paint().apply {
-                    color = android.graphics.Color.parseColor("#E0000000")
-                    isAntiAlias = true
-                    style = android.graphics.Paint.Style.FILL
-                }
-                
-                override fun draw(canvas: android.graphics.Canvas) {
-                    val path = android.graphics.Path().apply {
-                        moveTo(bounds.width() / 2f, 0f)  // Top center
-                        lineTo(0f, bounds.height().toFloat())  // Bottom left
-                        lineTo(bounds.width().toFloat(), bounds.height().toFloat())  // Bottom right
-                        close()
-                    }
-                    canvas.drawPath(path, paint)
-                }
-                
-                override fun setAlpha(alpha: Int) { paint.alpha = alpha }
-                override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) { paint.colorFilter = colorFilter }
-                override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
-            }
-        }
-        
-        // Container for proper positioning with triangle
-        val mainContainer = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            gravity = android.view.Gravity.CENTER_HORIZONTAL
-        }
-        
-        mainContainer.addView(triangleView)
-        mainContainer.addView(tooltipLayout)
-        
         val popup = android.widget.PopupWindow(
-            mainContainer,
+            tooltipLayout,
             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
             true
         )
-        popup.elevation = 16f
-        popup.setBackgroundDrawable(null)  // Remove default background
+        popup.elevation = 20f
+        popup.setBackgroundDrawable(null)
         
-        // Show popup below audio track button with slight delay to ensure button is visible
+        // Show popup below audio track button
         binding.btnAudioTrack.postDelayed({
             try {
-                // Calculate offset to center the popup under the button
-                popup.showAsDropDown(binding.btnAudioTrack, -60, 8)
+                popup.showAsDropDown(binding.btnAudioTrack, -80, 16)
                 
-                // Dismiss on tap anywhere
-                mainContainer.setOnClickListener {
+                // Dismiss on tap
+                tooltipLayout.setOnClickListener {
                     popup.dismiss()
                 }
                 
-                // Auto-dismiss after 5 seconds
+                // Auto-dismiss after 4 seconds
                 binding.btnAudioTrack.postDelayed({
                     if (popup.isShowing) popup.dismiss()
-                }, 5000)
+                }, 4000)
             } catch (e: Exception) {
                 android.util.Log.e("PlayerActivity", "Failed to show audio tooltip", e)
             }
-        }, 1000)
+        }, 800)
     }
+
     
     // Loading animation for buffering
     private var loadingAnimation: android.view.animation.Animation? = null
