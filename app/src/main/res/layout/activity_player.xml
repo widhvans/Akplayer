@@ -361,12 +361,14 @@
         android:textSize="16sp"
         android:visibility="gone" />
 
-    <!-- Buffering Progress -->
-    <ProgressBar
+    <!-- Buffering Progress - Rotating App Logo -->
+    <ImageView
         android:id="@+id/progressBar"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:layout_gravity="center"
+        android:src="@mipmap/ic_launcher"
+        android:scaleType="fitCenter"
         android:visibility="gone" />
 
 </FrameLayout>

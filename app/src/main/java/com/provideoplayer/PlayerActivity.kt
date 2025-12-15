@@ -698,8 +698,10 @@ class PlayerActivity : AppCompatActivity() {
             when (state) {
                 Player.STATE_BUFFERING -> {
                     binding.progressBar.visibility = View.VISIBLE
+                    startLoadingAnimation()
                 }
                 Player.STATE_READY -> {
+                    stopLoadingAnimation()
                     binding.progressBar.visibility = View.GONE
                     updateDuration()
                     android.util.Log.d("PlayerActivity", "Video ready - Duration: ${player?.duration}")
@@ -1898,6 +1900,20 @@ class PlayerActivity : AppCompatActivity() {
             .apply()
         
         android.util.Log.d("PlayerActivity", "Saved position $position for URI: ${currentUri.take(50)}...")
+    }
+    
+    // Loading animation for buffering
+    private var loadingAnimation: android.view.animation.Animation? = null
+    
+    private fun startLoadingAnimation() {
+        if (loadingAnimation == null) {
+            loadingAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.rotate_loading)
+        }
+        binding.progressBar.startAnimation(loadingAnimation)
+    }
+    
+    private fun stopLoadingAnimation() {
+        binding.progressBar.clearAnimation()
     }
 
     override fun onStop() {

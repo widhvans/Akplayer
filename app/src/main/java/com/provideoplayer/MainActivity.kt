@@ -358,12 +358,8 @@ class MainActivity : AppCompatActivity() {
                 sortVideos(SortType.DURATION)
                 true
             }
-            R.id.action_view_grid -> {
-                setLayoutMode(true)
-                true
-            }
-            R.id.action_view_list -> {
-                setLayoutMode(false)
+            R.id.action_view_toggle -> {
+                toggleLayoutMode()
                 true
             }
             R.id.action_settings -> {
@@ -712,6 +708,28 @@ class MainActivity : AppCompatActivity() {
         // Re-set adapter to force complete recreation of all ViewHolders
         binding.recyclerView.adapter = null
         binding.recyclerView.adapter = videoAdapter
+        
+        // Update toolbar icon
+        invalidateOptionsMenu()
+    }
+    
+    private fun toggleLayoutMode() {
+        val prefs = getSharedPreferences("pro_video_player_prefs", MODE_PRIVATE)
+        val isCurrentlyGrid = prefs.getBoolean("is_grid_view", true)
+        setLayoutMode(!isCurrentlyGrid)  // Toggle to opposite
+    }
+    
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        // Update toggle icon based on current view mode
+        val prefs = getSharedPreferences("pro_video_player_prefs", MODE_PRIVATE)
+        val isGrid = prefs.getBoolean("is_grid_view", true)
+        
+        menu.findItem(R.id.action_view_toggle)?.let { item ->
+            // Show opposite icon (grid icon when in list mode, list icon when in grid mode)
+            item.setIcon(if (isGrid) R.drawable.ic_list_view else R.drawable.ic_grid_view)
+        }
+        
+        return super.onPrepareOptionsMenu(menu)
     }
     
     private fun applyVideoLayoutPreference() {

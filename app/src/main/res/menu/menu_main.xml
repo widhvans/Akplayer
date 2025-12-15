@@ -18,6 +18,13 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_view_toggle"
+        android:icon="@drawable/ic_grid_view"
+        android:title="Toggle View"
+        app:iconTint="@color/white"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_sort"
         android:icon="@drawable/ic_sort"
         android:title="Sort"
@@ -52,12 +59,6 @@
                 android:id="@+id/action_refresh"
                 android:icon="@drawable/ic_refresh"
                 android:title="Refresh" />
-            <item
-                android:id="@+id/action_view_grid"
-                android:title="Grid View" />
-            <item
-                android:id="@+id/action_view_list"
-                android:title="List View" />
             <item
                 android:id="@+id/action_settings"
                 android:title="Settings" />
