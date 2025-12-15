@@ -29,6 +29,7 @@ import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import android.view.ScaleGestureDetector
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -78,6 +79,14 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var trackSelector: DefaultTrackSelector
     private lateinit var audioManager: AudioManager
     private lateinit var gestureDetector: GestureDetectorCompat
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
+    
+    // Zoom/Pan state
+    private var currentScale = 1.0f
+    private var currentTranslateX = 0f
+    private var currentTranslateY = 0f
+    private val minScale = 1.0f
+    private val maxScale = 4.0f
     
     private var playlist: List<String> = emptyList()
     private var playlistTitles: List<String> = emptyList()
@@ -688,8 +697,38 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
         
+        // Setup scale gesture detector for pinch zoom
+        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                if (isLocked) return false
+                
+                // Calculate new scale
+                val scaleFactor = detector.scaleFactor
+                currentScale = (currentScale * scaleFactor).coerceIn(minScale, maxScale)
+                
+                // Apply zoom to player view
+                binding.playerView.scaleX = currentScale
+                binding.playerView.scaleY = currentScale
+                
+                return true
+            }
+            
+            override fun onScaleEnd(detector: ScaleGestureDetector) {
+                // Reset if zoomed out beyond minimum
+                if (currentScale <= minScale) {
+                    resetZoom()
+                }
+            }
+        })
+        
         binding.gestureOverlay.setOnTouchListener { _, event ->
-            gestureDetector.onTouchEvent(event)
+            // Handle scale gesture first (2+ fingers)
+            scaleGestureDetector.onTouchEvent(event)
+            
+            // Only process single-finger gestures if not scaling
+            if (!scaleGestureDetector.isInProgress) {
+                gestureDetector.onTouchEvent(event)
+            }
             
             if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
                 isGestureActive = false
@@ -699,6 +738,16 @@ class PlayerActivity : AppCompatActivity() {
             
             true
         }
+    }
+    
+    private fun resetZoom() {
+        currentScale = 1.0f
+        currentTranslateX = 0f
+        currentTranslateY = 0f
+        binding.playerView.scaleX = 1.0f
+        binding.playerView.scaleY = 1.0f
+        binding.playerView.translationX = 0f
+        binding.playerView.translationY = 0f
     }
 
     private fun setupUIControls() {
@@ -1331,7 +1380,10 @@ class PlayerActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         hideSystemUI()
-        player?.playWhenReady = true
+        // Only auto-play if not in PiP mode (PiP handles its own playback)
+        if (!isPipMode) {
+            player?.playWhenReady = true
+        }
     }
 
     override fun onPause() {

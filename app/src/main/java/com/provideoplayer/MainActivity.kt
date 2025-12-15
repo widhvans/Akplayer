@@ -40,6 +40,9 @@ class MainActivity : AppCompatActivity() {
     private var searchQuery: String = ""
     private var currentTab = 0  // 0=Videos, 1=Audio, 2=Browse, 3=Playlist
     private var browseFilter = 0  // 0=All, 1=Videos only, 2=Audio only
+    
+    // Scroll position state for preserving list position
+    private var savedScrollPosition: android.os.Parcelable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Apply saved theme before calling super.onCreate and setContentView
@@ -1070,12 +1073,26 @@ class MainActivity : AppCompatActivity() {
         if (PermissionManager.hasStoragePermission(this) && allVideos.isEmpty()) {
             loadVideos()
         } else {
+            // Save scroll position before refreshing
+            val scrollPosition = binding.recyclerView.layoutManager?.onSaveInstanceState()
+            
             // Refresh adapter to update NEW tags after returning from player
             // This forces a rebind which re-checks history
             val currentList = videoAdapter.currentList.toList()
             videoAdapter.submitList(null)
-            videoAdapter.submitList(currentList)
+            videoAdapter.submitList(currentList) {
+                // Restore scroll position after list is updated
+                scrollPosition?.let {
+                    binding.recyclerView.layoutManager?.onRestoreInstanceState(it)
+                }
+            }
         }
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        // Save scroll position when leaving activity
+        savedScrollPosition = binding.recyclerView.layoutManager?.onSaveInstanceState()
     }
 
     enum class SortType {
