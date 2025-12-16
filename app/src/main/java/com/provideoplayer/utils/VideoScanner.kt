@@ -34,7 +34,8 @@ object VideoScanner {
             MediaStore.Video.Media.DATA,
             MediaStore.Video.Media.DURATION,
             MediaStore.Video.Media.SIZE,
-            MediaStore.Video.Media.RESOLUTION,
+            MediaStore.Video.Media.WIDTH,
+            MediaStore.Video.Media.HEIGHT,
             MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.BUCKET_DISPLAY_NAME,
             MediaStore.Video.Media.BUCKET_ID,
@@ -55,7 +56,8 @@ object VideoScanner {
             val dataColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA)
             val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
             val sizeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE)
-            val resolutionColumn = cursor.getColumnIndex(MediaStore.Video.Media.RESOLUTION)
+            val widthColumn = cursor.getColumnIndex(MediaStore.Video.Media.WIDTH)
+            val heightColumn = cursor.getColumnIndex(MediaStore.Video.Media.HEIGHT)
             val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATE_ADDED)
             val folderNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_DISPLAY_NAME)
             val folderIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.BUCKET_ID)
@@ -67,7 +69,12 @@ object VideoScanner {
                 val data = cursor.getString(dataColumn) ?: ""
                 val duration = cursor.getLong(durationColumn)
                 val size = cursor.getLong(sizeColumn)
-                val resolution = if (resolutionColumn >= 0) cursor.getString(resolutionColumn) ?: "" else ""
+                
+                // Get width and height for resolution
+                val width = if (widthColumn >= 0) cursor.getInt(widthColumn) else 0
+                val height = if (heightColumn >= 0) cursor.getInt(heightColumn) else 0
+                val resolution = if (width > 0 && height > 0) "${width}x${height}" else ""
+                
                 val dateAdded = cursor.getLong(dateColumn)
                 val folderName = cursor.getString(folderNameColumn) ?: "Internal Storage"
                 val folderId = cursor.getLong(folderIdColumn)
