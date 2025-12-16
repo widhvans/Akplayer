@@ -14,13 +14,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SearchView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.play.core.appupdate.AppUpdateManager
-import com.google.android.play.core.appupdate.AppUpdateManagerFactory
-import com.google.android.play.core.install.InstallStateUpdatedListener
-import com.google.android.play.core.install.model.AppUpdateType
-import com.google.android.play.core.install.model.InstallStatus
-import com.google.android.play.core.install.model.UpdateAvailability
 import com.provideoplayer.adapter.MainPagerAdapter
 import com.provideoplayer.databinding.ActivityMainBinding
 import com.provideoplayer.fragment.BrowseFragment
@@ -31,15 +24,10 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var pagerAdapter: MainPagerAdapter
-    private lateinit var appUpdateManager: AppUpdateManager
     
     private var currentTab = 0  // 0=Videos, 1=Audio, 2=Browse, 3=Playlist, 4=Network
     private var searchQuery: String = ""
     private var pendingNetworkClick = false
-    
-    companion object {
-        private const val UPDATE_REQUEST_CODE = 100
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Apply saved theme before calling super.onCreate and setContentView
@@ -55,9 +43,6 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
         setupFab()
         
         checkPermissionAndLoadContent()
-        
-        // Check for app updates from Play Store
-        checkForAppUpdate()
     }
     
     private fun applyAppTheme() {
@@ -532,80 +517,6 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
         if (requestCode == DELETE_REQUEST_CODE && resultCode == RESULT_OK) {
             Toast.makeText(this, "File deleted successfully", Toast.LENGTH_SHORT).show()
             refreshCurrentFragment()
-        }
-        // Handle in-app update result
-        if (requestCode == UPDATE_REQUEST_CODE) {
-            if (resultCode != RESULT_OK) {
-                // Update was cancelled or failed, can retry later
-                Toast.makeText(this, "Update cancelled", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-    
-    private fun checkForAppUpdate() {
-        appUpdateManager = AppUpdateManagerFactory.create(this)
-        
-        val appUpdateInfoTask = appUpdateManager.appUpdateInfo
-        
-        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
-            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
-                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
-                
-                // Request a flexible update (user can continue using app while downloading)
-                try {
-                    appUpdateManager.startUpdateFlowForResult(
-                        appUpdateInfo,
-                        AppUpdateType.FLEXIBLE,
-                        this,
-                        UPDATE_REQUEST_CODE
-                    )
-                    
-                    // Register listener for download progress
-                    appUpdateManager.registerListener(installStateUpdatedListener)
-                } catch (e: Exception) {
-                    // Update flow failed, silently ignore
-                }
-            }
-        }
-    }
-    
-    private val installStateUpdatedListener = InstallStateUpdatedListener { state ->
-        if (state.installStatus() == InstallStatus.DOWNLOADED) {
-            // Update downloaded, show snackbar to prompt user to install
-            Snackbar.make(
-                binding.root,
-                "Update downloaded! Restart to apply.",
-                Snackbar.LENGTH_INDEFINITE
-            ).setAction("RESTART") {
-                appUpdateManager.completeUpdate()
-            }.show()
-            
-            // Unregister listener to avoid memory leak
-            appUpdateManager.unregisterListener(installStateUpdatedListener)
-        }
-    }
-    
-    override fun onResume() {
-        super.onResume()
-        
-        // FAB visibility
-        val prefs = getSharedPreferences("pro_video_player_prefs", MODE_PRIVATE)
-        val lastUri = prefs.getString("last_video_uri", null)
-        binding.fabContinueVideo.visibility = if (lastUri != null) View.VISIBLE else View.GONE
-        
-        // Check if update was downloaded while app was in background
-        if (::appUpdateManager.isInitialized) {
-            appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
-                if (appUpdateInfo.installStatus() == InstallStatus.DOWNLOADED) {
-                    Snackbar.make(
-                        binding.root,
-                        "Update ready! Restart to apply.",
-                        Snackbar.LENGTH_INDEFINITE
-                    ).setAction("RESTART") {
-                        appUpdateManager.completeUpdate()
-                    }.show()
-                }
-            }
         }
     }
 }
