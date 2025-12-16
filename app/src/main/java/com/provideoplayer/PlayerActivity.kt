@@ -1308,6 +1308,9 @@ class PlayerActivity : AppCompatActivity() {
                         // Use Long arithmetic to avoid overflow for large durations
                         val position = (duration.toLong() * progress.toLong() / 100L)
                         binding.currentTime.text = formatTime(position)
+                        
+                        // Live sync - video seeks while dragging
+                        player?.seekTo(position)
                     }
                 }
             }
@@ -1562,11 +1565,7 @@ class PlayerActivity : AppCompatActivity() {
             // Calculate target position
             val targetPos = (seekStartPosition + seekAccumulator).coerceIn(0, duration)
             
-            // Update duration bar and current time - 0 latency
-            binding.seekBar.progress = ((targetPos.toFloat() / duration.toFloat()) * 1000).toInt()
-            binding.currentTime.text = formatTime(targetPos)
-            
-            // Apply seek immediately - video follows finger with 0 latency
+            // Only seek video - duration bar updates from player automatically when playing
             p.seekTo(targetPos)
         }
     }
