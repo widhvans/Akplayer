@@ -101,21 +101,30 @@ class VideoAdapter(
         private val checkboxSelected: ImageView? = itemView.findViewById(R.id.checkboxSelected)
         private val quality: TextView? = itemView.findViewById(R.id.videoQuality)
         private val date: TextView? = itemView.findViewById(R.id.videoDate)
+        private val folder: TextView? = itemView.findViewById(R.id.videoFolder)
 
         fun bind(video: VideoItem, position: Int) {
             title.text = video.title
-            duration?.text = video.getFormattedDuration()
             
-            // Set quality badge
-            val qualityBadge = video.getQualityBadge()
-            quality?.text = qualityBadge
-            quality?.visibility = if (qualityBadge.isNotEmpty()) View.VISIBLE else View.GONE
+            // Set duration with play icon for list view
+            if (isListView) {
+                duration?.text = "▶ ${video.getFormattedDuration()}"
+            } else {
+                duration?.text = video.getFormattedDuration()
+            }
             
-            // Set date (short format for grid)
-            date?.text = video.getFormattedDate()
+            // Set quality as resolution (1080p, 720p, etc.)
+            val resText = video.resolution.ifEmpty { "Unknown" }
+            quality?.text = resText
             
-            // Set size (for grid view)
+            // Set size
             size?.text = video.getFormattedSize()
+            
+            // Set folder name (for list view)
+            folder?.text = video.folderName
+            
+            // Set date (for grid view)
+            date?.text = video.getFormattedDate()
             
             // Check if it's an audio file
             val isAudio = video.mimeType.startsWith("audio") ||

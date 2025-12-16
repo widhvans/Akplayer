@@ -7,15 +7,15 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingHorizontal="16dp"
-    android:paddingVertical="12dp"
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp"
     android:background="?attr/selectableItemBackground">
 
-    <!-- Thumbnail Container with overlays -->
+    <!-- Large Thumbnail like PLAYit -->
     <androidx.cardview.widget.CardView
-        android:layout_width="72dp"
-        android:layout_height="54dp"
-        app:cardCornerRadius="6dp"
+        android:layout_width="140dp"
+        android:layout_height="80dp"
+        app:cardCornerRadius="8dp"
         app:cardElevation="2dp">
 
         <FrameLayout
@@ -30,30 +30,45 @@
                 android:background="@color/surface_dark"
                 tools:src="@drawable/ic_video_placeholder" />
 
-            <!-- Selection Checkbox -->
+            <!-- Selection Checkbox - Top Left -->
             <ImageView
                 android:id="@+id/checkboxSelected"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:layout_gravity="top|start"
-                android:layout_margin="2dp"
+                android:layout_margin="4dp"
                 android:src="@drawable/ic_check_circle"
                 android:visibility="gone" />
 
-            <!-- NEW Tag Badge -->
+            <!-- NEW Tag Badge - Top Right -->
             <TextView
                 android:id="@+id/newTag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|end"
-                android:layout_margin="2dp"
-                android:paddingHorizontal="3dp"
-                android:paddingVertical="1dp"
+                android:layout_margin="4dp"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="2dp"
                 android:text="NEW"
                 android:textColor="#FFFFFF"
-                android:textSize="6sp"
+                android:textSize="8sp"
                 android:textStyle="bold"
                 android:visibility="gone" />
+
+            <!-- Duration Badge - Bottom Right (like PLAYit) -->
+            <TextView
+                android:id="@+id/videoDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_duration_badge"
+                android:paddingHorizontal="5dp"
+                android:paddingVertical="2dp"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                tools:text="▶ 00:22" />
 
         </FrameLayout>
 
@@ -65,39 +80,42 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:layout_marginStart="12dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="4dp"
         android:orientation="vertical">
 
+        <!-- Title - 2 lines max like PLAYit -->
         <TextView
             android:id="@+id/videoTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
-            android:maxLines="1"
+            android:maxLines="2"
             android:textColor="@color/text_primary"
-            android:textSize="15sp"
-            tools:text="Video Title Here" />
+            android:textSize="14sp"
+            android:lineSpacingExtra="-2dp"
+            tools:text="Video Title Here can be long.mp4" />
 
-        <!-- First line: Duration and Size -->
+        <!-- Quality | Size line -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:orientation="horizontal">
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
-                android:id="@+id/videoDuration"
+                android:id="@+id/videoQuality"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
-                tools:text="05:30" />
+                tools:text="1080p" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="6dp"
-                android:text="•"
+                android:layout_marginHorizontal="4dp"
+                android:text="|"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
 
@@ -107,37 +125,30 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
-                tools:text="25.5 MB" />
+                tools:text="21.25MB" />
 
         </LinearLayout>
-        
-        <!-- Second line: Quality and Date -->
+
+        <!-- Folder name with icon (like PLAYit) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
-                android:id="@+id/videoQuality"
+                android:id="@+id/videoFolder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_quality_badge"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="1dp"
-                android:textColor="#FFFFFF"
-                android:textSize="9sp"
-                android:textStyle="bold"
-                tools:text="Full HD" />
-
-            <TextView
-                android:id="@+id/videoDate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:drawableStart="@drawable/ic_folder"
+                android:drawablePadding="4dp"
+                android:drawableTint="@color/text_secondary"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:textColor="@color/text_secondary"
                 android:textSize="11sp"
-                tools:text="Dec 16, 2024" />
+                tools:text="Camera" />
 
         </LinearLayout>
 
