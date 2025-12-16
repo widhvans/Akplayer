@@ -755,6 +755,17 @@ class PlayerActivity : AppCompatActivity() {
                     stopLoadingAnimation()
                     binding.progressBar.visibility = View.GONE
                     updateDuration()
+                    
+                    // FAIL-SAFE: If video started near end (>90%), seek to beginning
+                    player?.let { p ->
+                        val duration = p.duration
+                        val position = p.currentPosition
+                        if (duration > 0 && position > duration * 0.9) {
+                            android.util.Log.d("PlayerActivity", "Video started near end ($position/$duration), seeking to 0")
+                            p.seekTo(0)
+                        }
+                    }
+                    
                     android.util.Log.d("PlayerActivity", "Video ready - Duration: ${player?.duration}")
                 }
                 Player.STATE_ENDED -> {
