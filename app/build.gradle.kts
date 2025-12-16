@@ -101,4 +101,8 @@ dependencies {
     
     // GPU Image for video filters
     implementation("jp.co.cyberagent.android:gpuimage:2.1.0")
+    
+    // Google Play In-App Updates - for automatic update notifications
+    implementation("com.google.android.play:app-update:2.1.0")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 }
