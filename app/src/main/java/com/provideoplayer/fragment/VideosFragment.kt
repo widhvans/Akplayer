@@ -454,6 +454,44 @@ class VideosFragment : Fragment() {
         }
     }
     
+    fun filterBySearch(query: String) {
+        if (!isAdded || _binding == null) return
+        
+        val filtered = if (query.isEmpty()) {
+            allVideos.filter { !it.mimeType.startsWith("audio") && !it.path.endsWith(".mp3", true) }
+        } else {
+            allVideos.filter { video ->
+                !video.mimeType.startsWith("audio") && 
+                !video.path.endsWith(".mp3", true) &&
+                video.title.contains(query, ignoreCase = true)
+            }
+        }
+        
+        videoAdapter.submitList(filtered)
+        
+        if (filtered.isEmpty()) {
+            binding.emptyView.visibility = View.VISIBLE
+            binding.emptyText.text = if (query.isEmpty()) "No videos found" else "No results for \"$query\""
+        } else {
+            binding.emptyView.visibility = View.GONE
+        }
+    }
+    
+    fun sortBy(sortType: Int) {
+        if (!isAdded || _binding == null) return
+        
+        val currentList = videoAdapter.currentList.toMutableList()
+        val sorted = when (sortType) {
+            0 -> currentList.sortedBy { it.title.lowercase() }  // Name
+            1 -> currentList.sortedByDescending { it.dateAdded }  // Date (newest first)
+            2 -> currentList.sortedByDescending { it.size }  // Size (largest first)
+            3 -> currentList.sortedByDescending { it.duration }  // Duration (longest first)
+            else -> currentList
+        }
+        
+        videoAdapter.submitList(sorted)
+    }
+    
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null

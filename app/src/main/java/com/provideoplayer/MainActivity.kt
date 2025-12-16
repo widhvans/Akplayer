@@ -160,18 +160,34 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
         
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                // TODO: Implement search across fragments
+                filterCurrentFragment(query ?: "")
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 searchQuery = newText ?: ""
-                // TODO: Implement search across fragments
+                filterCurrentFragment(searchQuery)
                 return true
             }
         })
         
         return true
+    }
+    
+    private fun filterCurrentFragment(query: String) {
+        val fragment = pagerAdapter.getFragment(binding.viewPager.currentItem)
+        when (fragment) {
+            is com.provideoplayer.fragment.VideosFragment -> fragment.filterBySearch(query)
+            is com.provideoplayer.fragment.AudioFragment -> fragment.filterBySearch(query)
+        }
+    }
+    
+    private fun sortCurrentFragment(sortType: Int) {
+        val fragment = pagerAdapter.getFragment(binding.viewPager.currentItem)
+        when (fragment) {
+            is com.provideoplayer.fragment.VideosFragment -> fragment.sortBy(sortType)
+            is com.provideoplayer.fragment.AudioFragment -> fragment.sortBy(sortType)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -181,20 +197,23 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
                 true
             }
             R.id.action_sort_name -> {
-                // TODO: Sort in current fragment
-                Toast.makeText(this, "Sort by name", Toast.LENGTH_SHORT).show()
+                sortCurrentFragment(0) // Name
+                Toast.makeText(this, "Sorted by name", Toast.LENGTH_SHORT).show()
                 true
             }
             R.id.action_sort_date -> {
-                Toast.makeText(this, "Sort by date", Toast.LENGTH_SHORT).show()
+                sortCurrentFragment(1) // Date
+                Toast.makeText(this, "Sorted by date", Toast.LENGTH_SHORT).show()
                 true
             }
             R.id.action_sort_size -> {
-                Toast.makeText(this, "Sort by size", Toast.LENGTH_SHORT).show()
+                sortCurrentFragment(2) // Size
+                Toast.makeText(this, "Sorted by size", Toast.LENGTH_SHORT).show()
                 true
             }
             R.id.action_sort_duration -> {
-                Toast.makeText(this, "Sort by duration", Toast.LENGTH_SHORT).show()
+                sortCurrentFragment(3) // Duration
+                Toast.makeText(this, "Sorted by duration", Toast.LENGTH_SHORT).show()
                 true
             }
             R.id.action_view_toggle -> {
