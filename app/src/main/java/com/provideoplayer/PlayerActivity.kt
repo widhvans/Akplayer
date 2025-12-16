@@ -1276,6 +1276,11 @@ class PlayerActivity : AppCompatActivity() {
             true
         }
         
+        // More options button (3-dots menu with theme toggle)
+        binding.btnMoreOptions.setOnClickListener { view ->
+            showPlayerMenu(view)
+        }
+        
         // Subtitle button
         binding.btnSubtitle.setOnClickListener {
             showSubtitleDialog()
@@ -1678,6 +1683,52 @@ class PlayerActivity : AppCompatActivity() {
         
         dialog.setContentView(view)
         dialog.show()
+    }
+    
+    private fun showPlayerMenu(anchorView: View) {
+        val popup = android.widget.PopupMenu(this, anchorView)
+        popup.menuInflater.inflate(R.menu.menu_player, popup.menu)
+        
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_theme_dark -> {
+                    applyPlayerTheme(true) // Dark theme
+                    true
+                }
+                R.id.action_theme_light -> {
+                    applyPlayerTheme(false) // Light theme
+                    true
+                }
+                R.id.action_refresh -> {
+                    // Restart playback
+                    player?.let {
+                        val position = it.currentPosition
+                        it.seekTo(0)
+                        it.play()
+                    }
+                    Toast.makeText(this, "Player refreshed", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+    
+    private fun applyPlayerTheme(isDark: Boolean) {
+        if (isDark) {
+            // Dark theme - black background
+            binding.root.setBackgroundColor(android.graphics.Color.BLACK)
+            binding.topBar.setBackgroundResource(R.drawable.bg_gradient_top)
+            binding.bottomControls.setBackgroundResource(R.drawable.bg_gradient_bottom)
+            Toast.makeText(this, "Dark Theme Applied", Toast.LENGTH_SHORT).show()
+        } else {
+            // Light theme - white/gray background
+            binding.root.setBackgroundColor(android.graphics.Color.parseColor("#F5F5F5"))
+            binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"))
+            binding.bottomControls.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"))
+            Toast.makeText(this, "Light Theme Applied", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showSpeedDialog() {

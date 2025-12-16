@@ -96,7 +96,8 @@ class AudioFragment : Fragment() {
                 openPlayer(audio, position)
             },
             onVideoLongClick = { audio ->
-                showAudioInfo(audio)
+                // Long press to select file
+                toggleSelection(audio)
                 true
             },
             onMenuClick = { audio, view ->
@@ -111,6 +112,19 @@ class AudioFragment : Fragment() {
         applyLayoutPreference()
     }
     
+    private val selectedAudios = mutableSetOf<VideoItem>()
+    
+    private fun toggleSelection(audio: VideoItem) {
+        if (selectedAudios.contains(audio)) {
+            selectedAudios.remove(audio)
+            android.widget.Toast.makeText(requireContext(), "Deselected: ${audio.title}", android.widget.Toast.LENGTH_SHORT).show()
+        } else {
+            selectedAudios.add(audio)
+            android.widget.Toast.makeText(requireContext(), "Selected: ${audio.title} (${selectedAudios.size} selected)", android.widget.Toast.LENGTH_SHORT).show()
+        }
+        videoAdapter.notifyDataSetChanged()
+    }
+    
     private fun showAudioMenu(audio: VideoItem, anchorView: android.view.View) {
         val popup = android.widget.PopupMenu(requireContext(), anchorView)
         popup.menuInflater.inflate(R.menu.menu_video_item, popup.menu)
@@ -123,6 +137,10 @@ class AudioFragment : Fragment() {
                 }
                 R.id.action_pip -> {
                     openPlayerInPiP(audio)
+                    true
+                }
+                R.id.action_select -> {
+                    toggleSelection(audio)
                     true
                 }
                 R.id.action_info -> {

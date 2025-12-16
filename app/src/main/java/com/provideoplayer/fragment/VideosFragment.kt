@@ -49,7 +49,8 @@ class VideosFragment : Fragment() {
                 openPlayer(video, position)
             },
             onVideoLongClick = { video ->
-                showVideoInfo(video)
+                // Long press to select file
+                toggleSelection(video)
                 true
             },
             onMenuClick = { video, view ->
@@ -78,6 +79,10 @@ class VideosFragment : Fragment() {
                     openPlayerInPiP(video)
                     true
                 }
+                R.id.action_select -> {
+                    toggleSelection(video)
+                    true
+                }
                 R.id.action_info -> {
                     showVideoInfo(video)
                     true
@@ -94,6 +99,20 @@ class VideosFragment : Fragment() {
             }
         }
         popup.show()
+    }
+    
+    private val selectedVideos = mutableSetOf<VideoItem>()
+    
+    private fun toggleSelection(video: VideoItem) {
+        if (selectedVideos.contains(video)) {
+            selectedVideos.remove(video)
+            Toast.makeText(requireContext(), "Deselected: ${video.title}", Toast.LENGTH_SHORT).show()
+        } else {
+            selectedVideos.add(video)
+            Toast.makeText(requireContext(), "Selected: ${video.title} (${selectedVideos.size} selected)", Toast.LENGTH_SHORT).show()
+        }
+        // Update adapter to show selection state
+        videoAdapter.notifyDataSetChanged()
     }
     
     private fun openPlayerInPiP(video: VideoItem) {

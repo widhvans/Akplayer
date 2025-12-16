@@ -9,6 +9,10 @@
         android:title="Play in PiP"
         android:icon="@drawable/ic_pip" />
     <item
+        android:id="@+id/action_select"
+        android:title="Select"
+        android:icon="@drawable/ic_check" />
+    <item
         android:id="@+id/action_info"
         android:title="Info"
         android:icon="@drawable/ic_info" />
@@ -21,4 +25,3 @@
         android:title="Delete"
         android:icon="@drawable/ic_delete" />
 </menu>
-
