@@ -142,6 +142,9 @@ class PlayerActivity : AppCompatActivity() {
     private var isPipMode = false
     private var wasInPipMode = false  // Track if we were in PiP before it was closed
     
+    // Video ended state - set true on STATE_ENDED, cleared on play/seek
+    private var videoHasEnded = false
+    
     // Audio playback visualization
     private var isAudioFile = false
     private var cdAnimator: android.animation.ObjectAnimator? = null
@@ -772,6 +775,9 @@ class PlayerActivity : AppCompatActivity() {
                     // Video ended - ROBUST handling to prevent any loop/restart
                     android.util.Log.d("PlayerActivity", "Video ENDED - stopping playback completely")
                     
+                    // SET THE FLAG - this is 100% reliable indicator that video has completed
+                    videoHasEnded = true
+                    
                     player?.let { p ->
                         // 1. First pause playback
                         p.pause()
@@ -802,7 +808,7 @@ class PlayerActivity : AppCompatActivity() {
                         // 4. Update UI to show RESTART icon (not play icon)
                         binding.progressBar.visibility = View.GONE
                         showControls()
-                        updatePlayPauseButton()  // This will now show restart icon
+                        updatePlayPauseButton()  // This will now show restart icon because videoHasEnded = true
                     }
                 }
                 Player.STATE_IDLE -> {
@@ -1389,10 +1395,10 @@ class PlayerActivity : AppCompatActivity() {
             if (it.isPlaying) {
                 it.pause()
             } else {
-                // If video has ended (position near end), restart from beginning
-                if (it.playbackState == Player.STATE_ENDED || 
-                    (it.duration > 0 && it.currentPosition >= it.duration - 100)) {
+                // If video has ended, restart from beginning
+                if (videoHasEnded) {
                     it.seekTo(0)
+                    videoHasEnded = false  // Clear the flag after restart
                 }
                 it.play()
             }
@@ -1402,15 +1408,10 @@ class PlayerActivity : AppCompatActivity() {
     private fun updatePlayPauseButton() {
         player?.let { p ->
             val isPlaying = p.isPlaying
-            val duration = p.duration
-            val position = p.currentPosition
             
-            // Check if video is at end (95% or more of duration, or STATE_ENDED)
-            val isEnded = p.playbackState == Player.STATE_ENDED || 
-                         (duration > 0 && position >= duration * 0.95)
-            
+            // Use the videoHasEnded flag for 100% reliable detection
             val iconRes = when {
-                isEnded && !isPlaying -> R.drawable.ic_restart  // Show restart icon when video ended and not playing
+                videoHasEnded && !isPlaying -> R.drawable.ic_restart  // Show restart icon when video ended
                 isPlaying -> R.drawable.ic_pause
                 else -> R.drawable.ic_play
             }
