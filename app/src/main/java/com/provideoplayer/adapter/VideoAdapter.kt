@@ -72,6 +72,9 @@ class VideoAdapter(
                 notifyDataSetChanged()
             }
         }
+    
+    // NEW tag color: 0=Green (Video), 1=Cyan (Audio), 2=Orange (Browse)
+    var newTagColorType: Int = 0
 
     override fun getItemViewType(position: Int): Int {
         return if (isListView) VIEW_TYPE_LIST else VIEW_TYPE_GRID
@@ -123,9 +126,14 @@ class VideoAdapter(
                 !isUriInHistory(historyJson, videoUri)
             }
             
-            // Show NEW tag in grid view
+            // Show NEW tag with tab-specific color
             newTag?.visibility = if (isNew) View.VISIBLE else View.GONE
-            newTag?.setBackgroundResource(R.drawable.bg_new_tag)
+            when (newTagColorType) {
+                0 -> newTag?.setBackgroundColor(android.graphics.Color.parseColor("#00E676")) // Green for Videos
+                1 -> newTag?.setBackgroundColor(android.graphics.Color.parseColor("#00BCD4")) // Cyan for Audio
+                2 -> newTag?.setBackgroundColor(android.graphics.Color.parseColor("#FF5722")) // Orange for Browse
+                else -> newTag?.setBackgroundResource(R.drawable.bg_new_tag)
+            }
             
             // Show selection checkbox
             checkboxSelected?.visibility = if (isSelected(video)) View.VISIBLE else View.GONE

@@ -90,6 +90,8 @@ class BrowseFragment : Fragment() {
             openFolder(folder)
         }
         
+        videoAdapter.newTagColorType = 2 // Orange for Browse tab
+        
         binding.recyclerView.apply {
             setHasFixedSize(true)
             itemAnimator = null

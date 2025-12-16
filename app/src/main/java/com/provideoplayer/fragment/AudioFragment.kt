@@ -110,6 +110,8 @@ class AudioFragment : Fragment() {
             }
         )
         
+        videoAdapter.newTagColorType = 1 // Cyan for Audio tab
+        
         binding.recyclerView.apply {
             adapter = videoAdapter
             setHasFixedSize(true)

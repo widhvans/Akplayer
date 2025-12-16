@@ -63,6 +63,8 @@ class VideosFragment : Fragment() {
             }
         )
         
+        videoAdapter.newTagColorType = 0 // Green for Videos tab
+        
         binding.recyclerView.apply {
             adapter = videoAdapter
             setHasFixedSize(true)
