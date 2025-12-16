@@ -99,10 +99,20 @@ class VideoAdapter(
         private val btnMenu: ImageView? = itemView.findViewById(R.id.btnMenu)
         private val newTag: TextView? = itemView.findViewById(R.id.newTag)
         private val checkboxSelected: ImageView? = itemView.findViewById(R.id.checkboxSelected)
+        private val quality: TextView? = itemView.findViewById(R.id.videoQuality)
+        private val date: TextView? = itemView.findViewById(R.id.videoDate)
 
         fun bind(video: VideoItem, position: Int) {
             title.text = video.title
             duration?.text = video.getFormattedDuration()
+            
+            // Set quality badge
+            val qualityBadge = video.getQualityBadge()
+            quality?.text = qualityBadge
+            quality?.visibility = if (qualityBadge.isNotEmpty()) View.VISIBLE else View.GONE
+            
+            // Set date
+            date?.text = video.getFormattedDate()
             
             // Check if it's an audio file
             val isAudio = video.mimeType.startsWith("audio") ||

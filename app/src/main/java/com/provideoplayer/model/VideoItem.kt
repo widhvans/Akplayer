@@ -37,6 +37,31 @@ data class VideoItem(
             else -> "$size B"
         }
     }
+    
+    fun getQualityBadge(): String {
+        // Parse resolution like "1920x1080" or height directly
+        val height = try {
+            if (resolution.contains("x")) {
+                resolution.split("x").getOrNull(1)?.toIntOrNull() ?: 0
+            } else {
+                resolution.toIntOrNull() ?: 0
+            }
+        } catch (e: Exception) { 0 }
+        
+        return when {
+            height >= 2160 -> "4K"
+            height >= 1080 -> "Full HD"
+            height >= 720 -> "HD"
+            height >= 480 -> "SD"
+            height > 0 -> "${height}p"
+            else -> ""
+        }
+    }
+    
+    fun getFormattedDate(): String {
+        val sdf = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+        return sdf.format(java.util.Date(dateAdded * 1000))
+    }
 }
 
 /**
