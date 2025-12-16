@@ -42,8 +42,7 @@
             android:layout_margin="2dp"
             android:src="@drawable/ic_check_circle"
             android:visibility="gone"
-            android:background="@drawable/bg_checkbox"
-            app:tint="#00E5FF" />
+            android:elevation="4dp" />
 
         <!-- NEW Tag Badge -->
         <TextView
