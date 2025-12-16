@@ -382,12 +382,28 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
                 historyItems.add(title to uri)
             }
             
-            val titles = historyItems.map { it.first }.toTypedArray()
+            // Create custom dialog with thumbnails
+            val dialogView = layoutInflater.inflate(R.layout.dialog_history, null)
+            val recyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.historyRecyclerView)
+            val emptyText = dialogView.findViewById<android.widget.TextView>(R.id.emptyText)
             
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Recently Watched")
-                .setItems(titles) { _, which ->
-                    val (title, uri) = historyItems[which]
+            val dialog = MaterialAlertDialogBuilder(this)
+                .setTitle("📺 Recently Watched")
+                .setView(dialogView)
+                .setNegativeButton("Close", null)
+                .create()
+            
+            if (historyItems.isEmpty()) {
+                emptyText.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
+            } else {
+                emptyText.visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
+                
+                recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+                recyclerView.adapter = com.provideoplayer.adapter.HistoryAdapter(historyItems) { title, uri ->
+                    dialog.dismiss()
+                    
                     val isNetworkStream = uri.startsWith("http://") || uri.startsWith("https://")
                     
                     val intent = Intent(this, PlayerActivity::class.java).apply {
@@ -399,8 +415,9 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
                     }
                     startActivity(intent)
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
+            }
+            
+            dialog.show()
         } catch (e: Exception) {
             Toast.makeText(this, "No history yet. Start watching!", Toast.LENGTH_SHORT).show()
         }
