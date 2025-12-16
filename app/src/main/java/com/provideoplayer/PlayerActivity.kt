@@ -1720,13 +1720,13 @@ class PlayerActivity : AppCompatActivity() {
             // Dark theme - black background
             binding.root.setBackgroundColor(android.graphics.Color.BLACK)
             binding.topBar.setBackgroundResource(R.drawable.bg_gradient_top)
-            binding.bottomControls.setBackgroundResource(R.drawable.bg_gradient_bottom)
+            binding.bottomBar.setBackgroundResource(R.drawable.bg_gradient_bottom)
             Toast.makeText(this, "Dark Theme Applied", Toast.LENGTH_SHORT).show()
         } else {
             // Light theme - white/gray background
             binding.root.setBackgroundColor(android.graphics.Color.parseColor("#F5F5F5"))
             binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"))
-            binding.bottomControls.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"))
+            binding.bottomBar.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"))
             Toast.makeText(this, "Light Theme Applied", Toast.LENGTH_SHORT).show()
         }
     }
