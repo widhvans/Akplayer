@@ -18,6 +18,13 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_cast"
+        android:icon="@drawable/ic_cast"
+        android:title="Cast"
+        app:iconTint="@color/white"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_view_toggle"
         android:icon="@drawable/ic_grid_view"
         android:title="Toggle View"

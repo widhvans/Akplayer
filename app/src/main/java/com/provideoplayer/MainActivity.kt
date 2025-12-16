@@ -228,6 +228,10 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
                 openHistory()
                 true
             }
+            R.id.action_cast -> {
+                openCastSettings()
+                true
+            }
             R.id.action_refresh -> {
                 refreshCurrentFragment()
                 Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT).show()
@@ -362,6 +366,22 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
     private fun openSettings() {
         val intent = Intent(this, SettingsActivity::class.java)
         startActivity(intent)
+    }
+    
+    private fun openCastSettings() {
+        try {
+            // Try to open cast settings directly
+            val intent = Intent(android.provider.Settings.ACTION_CAST_SETTINGS)
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                // Fallback to display settings
+                val intent = Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS)
+                startActivity(intent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, "Cast settings not available", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
     
     private fun continueLastVideo() {
