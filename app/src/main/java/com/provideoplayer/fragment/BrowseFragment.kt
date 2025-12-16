@@ -36,6 +36,7 @@ class BrowseFragment : Fragment() {
     private var isShowingFolders = true
     private var currentFolderId: Long? = null
     private var currentFolderPath: String? = null
+    private var currentFolderName: String? = null  // Store folder name for filter switch
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -71,6 +72,8 @@ class BrowseFragment : Fragment() {
         
         binding.recyclerView.apply {
             setHasFixedSize(true)
+            // Set item animator to null for smoother transitions
+            itemAnimator = null
         }
     }
     
@@ -89,23 +92,67 @@ class BrowseFragment : Fragment() {
         updateFilterButtonStyles()
         
         binding.btnFilterVideo.setOnClickListener {
+            if (browseFilter == 1) return@setOnClickListener  // Already on video filter
+            
+            val previousFilter = browseFilter
             browseFilter = 1
             updateFilterButtonStyles()
-            currentFolderId = null
-            currentFolderPath = null
-            (activity as? VideosFragment.TabHost)?.setBackEnabled(false)
-            (activity as? VideosFragment.TabHost)?.updateTitle("Browse")
-            showBrowseMedia()
+            
+            // If we're inside a folder, stay inside but switch content type
+            if (!isShowingFolders && currentFolderPath != null) {
+                switchFilterInFolder()
+            } else {
+                // At folder level, just refresh folder list
+                showBrowseMedia()
+            }
         }
         
         binding.btnFilterAudio.setOnClickListener {
+            if (browseFilter == 2) return@setOnClickListener  // Already on audio filter
+            
+            val previousFilter = browseFilter
             browseFilter = 2
             updateFilterButtonStyles()
-            currentFolderId = null
-            currentFolderPath = null
-            (activity as? VideosFragment.TabHost)?.setBackEnabled(false)
-            (activity as? VideosFragment.TabHost)?.updateTitle("Browse")
-            showBrowseMedia()
+            
+            // If we're inside a folder, stay inside but switch content type
+            if (!isShowingFolders && currentFolderPath != null) {
+                switchFilterInFolder()
+            } else {
+                // At folder level, just refresh folder list
+                showBrowseMedia()
+            }
+        }
+    }
+    
+    /**
+     * Switch filter while staying inside the current folder
+     */
+    private fun switchFilterInFolder() {
+        // Clear RecyclerView pool to prevent thumbnail glitches
+        binding.recyclerView.recycledViewPool.clear()
+        
+        if (browseFilter == 2) {
+            // Switching to audio filter
+            showAudioInFolder(currentFolderPath!!)
+        } else {
+            // Switching to video filter - need to find matching folder
+            if (currentFolderId != null) {
+                showVideosInFolder(currentFolderId!!)
+            } else {
+                // Try to find folder by path
+                val matchingFolder = allFolders.find { it.path == currentFolderPath }
+                if (matchingFolder != null) {
+                    currentFolderId = matchingFolder.id
+                    showVideosInFolder(matchingFolder.id)
+                } else {
+                    // Fallback to folder list
+                    currentFolderPath = null
+                    currentFolderName = null
+                    (activity as? VideosFragment.TabHost)?.setBackEnabled(false)
+                    (activity as? VideosFragment.TabHost)?.updateTitle("Browse")
+                    showBrowseMedia()
+                }
+            }
         }
     }
     
@@ -162,6 +209,12 @@ class BrowseFragment : Fragment() {
     
     private fun showBrowseMedia() {
         isShowingFolders = true
+        currentFolderId = null
+        currentFolderPath = null
+        currentFolderName = null
+        
+        // Clear RecyclerView pool to prevent rendering issues
+        binding.recyclerView.recycledViewPool.clear()
         binding.recyclerView.adapter = folderAdapter
         applyFolderLayoutPreference()
         
@@ -221,9 +274,13 @@ class BrowseFragment : Fragment() {
     private fun openFolder(folder: FolderItem) {
         currentFolderId = folder.id
         currentFolderPath = folder.path
+        currentFolderName = folder.name
         
         (activity as? VideosFragment.TabHost)?.setBackEnabled(true)
         (activity as? VideosFragment.TabHost)?.updateTitle(folder.name)
+        
+        // Clear RecyclerView pool before switching adapters
+        binding.recyclerView.recycledViewPool.clear()
         
         if (browseFilter == 2) {
             showAudioInFolder(folder.path)
@@ -234,6 +291,10 @@ class BrowseFragment : Fragment() {
     
     private fun showVideosInFolder(folderId: Long) {
         isShowingFolders = false
+        
+        // Clear pool and reset adapter for clean transition
+        binding.recyclerView.recycledViewPool.clear()
+        binding.recyclerView.adapter = null
         binding.recyclerView.adapter = videoAdapter
         applyLayoutPreference()
         
@@ -268,6 +329,10 @@ class BrowseFragment : Fragment() {
     
     private fun showAudioInFolder(folderPath: String) {
         isShowingFolders = false
+        
+        // Clear pool and reset adapter for clean transition
+        binding.recyclerView.recycledViewPool.clear()
+        binding.recyclerView.adapter = null
         binding.recyclerView.adapter = videoAdapter
         applyLayoutPreference()
         
@@ -425,6 +490,7 @@ class BrowseFragment : Fragment() {
         return if (!isShowingFolders && (currentFolderId != null || currentFolderPath != null)) {
             currentFolderId = null
             currentFolderPath = null
+            currentFolderName = null
             (activity as? VideosFragment.TabHost)?.setBackEnabled(false)
             (activity as? VideosFragment.TabHost)?.updateTitle("Browse")
             showBrowseMedia()
@@ -436,16 +502,23 @@ class BrowseFragment : Fragment() {
     
     fun refreshData() {
         if (isAdded && _binding != null) {
+            // Clear RecyclerView pool to prevent thumbnail glitches
+            binding.recyclerView.recycledViewPool.clear()
+            
             // Apply layout based on current view
             if (isShowingFolders) {
                 applyFolderLayoutPreference()
-                // Just refresh layout, no need to reload all data
+                // Reset adapter for clean refresh
+                binding.recyclerView.adapter = null
+                binding.recyclerView.adapter = folderAdapter
                 val currentList = folderAdapter.currentList.toList()
                 folderAdapter.submitList(null)
                 folderAdapter.submitList(currentList)
             } else {
                 applyLayoutPreference()
-                // Just refresh layout
+                // Reset adapter for clean refresh
+                binding.recyclerView.adapter = null
+                binding.recyclerView.adapter = videoAdapter
                 val currentList = videoAdapter.currentList.toList()
                 videoAdapter.submitList(null)
                 videoAdapter.submitList(currentList)
