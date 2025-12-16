@@ -222,8 +222,13 @@ class VideosFragment : Fragment() {
     
     fun refreshData() {
         if (isAdded && _binding != null) {
+            // Only change layout - don't reload data for smoother toggle
+            val currentList = videoAdapter.currentList.toList()
             applyLayoutPreference()
-            loadVideos()
+            // Resubmit same list with new layout
+            if (currentList.isNotEmpty()) {
+                videoAdapter.submitList(currentList)
+            }
         }
     }
     

@@ -549,22 +549,15 @@ class BrowseFragment : Fragment() {
     
     fun refreshData() {
         if (isAdded && _binding != null) {
-            binding.recyclerView.recycledViewPool.clear()
-            
+            // Only change layout - don't clear and resubmit to avoid glitch
             if (isShowingFolders) {
                 applyFolderLayoutPreference()
-                binding.recyclerView.adapter = null
-                binding.recyclerView.adapter = folderAdapter
-                val currentList = folderAdapter.currentList.toList()
-                folderAdapter.submitList(null)
-                folderAdapter.submitList(currentList)
+                // Just refresh the adapter without clearing
+                folderAdapter.notifyDataSetChanged()
             } else {
                 applyLayoutPreference()
-                binding.recyclerView.adapter = null
-                binding.recyclerView.adapter = videoAdapter
-                val currentList = videoAdapter.currentList.toList()
-                videoAdapter.submitList(null)
-                videoAdapter.submitList(currentList)
+                // Just refresh the adapter without clearing
+                videoAdapter.notifyDataSetChanged()
             }
         }
     }
