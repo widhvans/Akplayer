@@ -1364,6 +1364,11 @@ class PlayerActivity : AppCompatActivity() {
             if (it.isPlaying) {
                 it.pause()
             } else {
+                // If video has ended (position near end), restart from beginning
+                if (it.playbackState == Player.STATE_ENDED || 
+                    (it.duration > 0 && it.currentPosition >= it.duration - 100)) {
+                    it.seekTo(0)
+                }
                 it.play()
             }
         }
@@ -2064,7 +2069,15 @@ class PlayerActivity : AppCompatActivity() {
         
         // Save position for this URI (use hashCode as key to avoid special chars issues)
         val uriKey = currentUri.hashCode().toString()
-        positionsObj.put(uriKey, position)
+        
+        // Don't save position if video is complete (near end) - save 0 instead
+        val duration = player?.duration ?: 0
+        val positionToSave = if (duration > 0 && position >= duration - 1000) {
+            0L  // Video completed, save 0 so it starts from beginning next time
+        } else {
+            position
+        }
+        positionsObj.put(uriKey, positionToSave)
         
         // Clean up old position entries (keep only for URIs in history)
         val validKeys = (0 until finalArray.length()).map { 
