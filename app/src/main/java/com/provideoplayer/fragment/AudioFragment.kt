@@ -498,7 +498,15 @@ class AudioFragment : Fragment() {
             else -> currentList
         }
         
-        videoAdapter.submitList(sorted)
+        // Apply smooth animation
+        val layoutAnimation = android.view.animation.AnimationUtils.loadLayoutAnimation(
+            requireContext(), R.anim.layout_animation
+        )
+        binding.recyclerView.layoutAnimation = layoutAnimation
+        
+        videoAdapter.submitList(sorted) {
+            binding.recyclerView.scheduleLayoutAnimation()
+        }
     }
     
     override fun onDestroyView() {

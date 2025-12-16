@@ -111,8 +111,11 @@ class VideoAdapter(
             quality?.text = qualityBadge
             quality?.visibility = if (qualityBadge.isNotEmpty()) View.VISIBLE else View.GONE
             
-            // Set date
+            // Set date (short format for grid)
             date?.text = video.getFormattedDate()
+            
+            // Set size (for grid view)
+            size?.text = video.getFormattedSize()
             
             // Check if it's an audio file
             val isAudio = video.mimeType.startsWith("audio") ||
