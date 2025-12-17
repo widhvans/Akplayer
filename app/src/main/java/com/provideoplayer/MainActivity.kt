@@ -266,10 +266,6 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
                 openHistory()
                 true
             }
-            R.id.action_cast -> {
-                openCastSettings()
-                true
-            }
             R.id.action_refresh -> {
                 refreshCurrentFragment()
                 Toast.makeText(this, "Refreshing...", Toast.LENGTH_SHORT).show()
