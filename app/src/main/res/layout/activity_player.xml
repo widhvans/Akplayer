@@ -112,12 +112,12 @@
             app:tint="@color/white" />
 
         <ImageButton
-            android:id="@+id/btnMoreOptions"
+            android:id="@+id/btnCast"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="More Options"
-            android:src="@drawable/ic_more_vert"
+            android:contentDescription="Cast"
+            android:src="@drawable/ic_cast"
             app:tint="@color/white" />
 
     </LinearLayout>

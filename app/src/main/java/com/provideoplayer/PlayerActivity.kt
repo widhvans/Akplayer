@@ -1315,9 +1315,9 @@ class PlayerActivity : AppCompatActivity() {
             true
         }
         
-        // More options button (3-dots menu with theme toggle)
-        binding.btnMoreOptions.setOnClickListener { view ->
-            showPlayerMenu(view)
+        // Cast button - opens system cast settings
+        binding.btnCast.setOnClickListener {
+            openCastSettings()
         }
         
         // Subtitle button
@@ -1728,49 +1728,19 @@ class PlayerActivity : AppCompatActivity() {
         dialog.show()
     }
     
-    private fun showPlayerMenu(anchorView: View) {
-        val popup = android.widget.PopupMenu(this, anchorView)
-        popup.menuInflater.inflate(R.menu.menu_player, popup.menu)
-        
-        popup.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.action_theme_dark -> {
-                    applyPlayerTheme(true) // Dark theme
-                    true
-                }
-                R.id.action_theme_light -> {
-                    applyPlayerTheme(false) // Light theme
-                    true
-                }
-                R.id.action_refresh -> {
-                    // Restart playback
-                    player?.let {
-                        val position = it.currentPosition
-                        it.seekTo(0)
-                        it.play()
-                    }
-                    Toast.makeText(this, "Player refreshed", Toast.LENGTH_SHORT).show()
-                    true
-                }
-                else -> false
+    private fun openCastSettings() {
+        try {
+            // Try to open Cast settings directly
+            val intent = android.content.Intent(android.provider.Settings.ACTION_CAST_SETTINGS)
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback - open wireless display/connected devices settings
+            try {
+                val intent = android.content.Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)
+                startActivity(intent)
+            } catch (e2: Exception) {
+                Toast.makeText(this, "Cannot open Cast settings", Toast.LENGTH_SHORT).show()
             }
-        }
-        popup.show()
-    }
-    
-    private fun applyPlayerTheme(isDark: Boolean) {
-        if (isDark) {
-            // Dark theme - black background
-            binding.root.setBackgroundColor(android.graphics.Color.BLACK)
-            binding.topBar.setBackgroundResource(R.drawable.bg_gradient_top)
-            binding.bottomBar.setBackgroundResource(R.drawable.bg_gradient_bottom)
-            Toast.makeText(this, "Dark Theme Applied", Toast.LENGTH_SHORT).show()
-        } else {
-            // Light theme - white/gray background
-            binding.root.setBackgroundColor(android.graphics.Color.parseColor("#F5F5F5"))
-            binding.topBar.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"))
-            binding.bottomBar.setBackgroundColor(android.graphics.Color.parseColor("#E0E0E0"))
-            Toast.makeText(this, "Light Theme Applied", Toast.LENGTH_SHORT).show()
         }
     }
 
