@@ -271,8 +271,6 @@ class SettingsActivity : AppCompatActivity() {
                 • Network streaming
                 • Picture-in-Picture mode
                 • Multiple Themes
-                
-                Powered by ExoPlayer
             """.trimIndent())
             .setPositiveButton("OK", null)
             .show()
