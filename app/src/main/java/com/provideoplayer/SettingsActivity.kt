@@ -66,6 +66,14 @@ class SettingsActivity : AppCompatActivity() {
             setDisplayHomeAsUpEnabled(true)
             title = "Settings"
         }
+        
+        // Tint navigation icon and title based on theme
+        val typedValue = android.util.TypedValue()
+        theme.resolveAttribute(android.R.attr.colorControlNormal, typedValue, true)
+        val iconColor = typedValue.data
+        binding.toolbar.navigationIcon?.setTint(iconColor)
+        binding.toolbar.setTitleTextColor(iconColor)
+        
         binding.toolbar.setNavigationOnClickListener {
             onBackPressed()
         }

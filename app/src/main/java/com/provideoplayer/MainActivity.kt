@@ -171,6 +171,19 @@ class MainActivity : AppCompatActivity(), VideosFragment.TabHost {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
         
+        // Tint menu icons based on theme
+        val typedValue = android.util.TypedValue()
+        theme.resolveAttribute(android.R.attr.colorControlNormal, typedValue, true)
+        val iconColor = typedValue.data
+        
+        for (i in 0 until menu.size()) {
+            val item = menu.getItem(i)
+            item.icon?.let {
+                it.mutate()
+                it.setTint(iconColor)
+            }
+        }
+        
         // Setup search
         val searchItem = menu.findItem(R.id.action_search)
         val searchView = searchItem.actionView as SearchView
